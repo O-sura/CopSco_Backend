@@ -1,0 +1,268 @@
+const express = require('express');
+const router  = express.Router()
+const bcrypt = require('bcrypt');
+const pool = require('../db.config')
+const axios = require('axios');
+const jwt = require('jsonwebtoken')
+
+
+router.post('/register', async (req,res) => {
+    console.log("Register route")
+
+     //Destructure the request data
+     const {
+        username,
+        pass,
+        dob,
+        nic,
+        fname,
+        lname,
+        contact,
+        email,
+        IDfront,
+        IDback,
+        verifyMode,
+        verificationPIC,
+      } = req.body;
+
+
+      
+    try {
+          
+            // Check if username or NIC already exists
+            const existingUser = await pool.query(
+              'SELECT * FROM users WHERE username = $1 OR NIC = $2 OR email = $3',
+              [username, nic, email]
+            );
+        
+            if (existingUser.rows.length > 0) {
+              return res.status(400).json({ error: 'Username or NIC already taken' });
+            }
+        
+            // Encrypt the password using bcrypt
+            const saltRounds = 10;
+            const hashedPassword = await bcrypt.hash(pass, saltRounds);
+        
+            // Generate the secret (hash of password + NIC)
+            const secret = await bcrypt.hash(pass + nic, saltRounds);
+
+            // Generate a 6-digit OTP
+            const otp = Math.floor(100000 + Math.random() * 900000);
+            const otpExpiration = new Date(Date.now() + 3 * 60 * 1000); // Set OTP expiration to 3 minutes from now
+
+        
+            // Insert user data into the database
+            const newUser = await pool.query(
+              'INSERT INTO users (username, password, dob, nic, fname, lname, idfront, idback, verificationimage, secret, email, contactno, verification_mode, otp, otp_expiration) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING *',
+              [username, hashedPassword, dob, nic, fname, lname, IDfront, IDback, verificationPIC, secret, email, contact, verifyMode, otp, otpExpiration]
+            );
+        
+            // Return the newly created user
+            //res.json(newUser.rows[0]);
+
+            //Send OTP for verification - phone number and redirect to verification page
+            let message = `Thank you for registering in CopSco. Your OTP: ${otp}`;
+            let url =  `https://www.textit.biz/sendmsg?id=94757721815&pw=1653&to=${contact}&text=${message}`
+            
+            // try {
+            //   // Make an HTTP POST request using axios
+            //   const response = await axios.post(url)
+            //   // Handle the response from the API
+            //   const responseData = response.data;
+            //   res.json(responseData);
+            // } catch (error) {
+            //   console.error('Error during API call:', error);
+            //   res.status(500).json({ error: 'Internal Server Error' });
+            // }
+            
+            // Save the OTP and its expiration in the user's session
+            req.session.userID = newUser.rows[0].userid;
+            res.json({ message: 'User created and OTP sent successfully' });
+            
+
+
+    } catch (error) {
+        console.error('Error during user registration:', error);
+        res.status(500).json({ error: 'Internal Server Error.' });
+    }
+})
+
+router.post('/verify-otp', async (req, res) => {
+    const userID = req.session.userID;
+    const { otp } = req.body;
+
+    try {
+      // Retrieve the user from the database based on the provided username
+      const user = await pool.query('SELECT * FROM users WHERE userid = $1', [userID]);
+    
+      if (user.rows.length === 0) {
+        console.log(userID);
+        return res.status(404).json({ error: 'User not found' });
+      }
+  
+      // Check if the OTP and its expiration time match
+      if (user.rows[0].otp !== otp) {
+        return res.status(400).json({ error: 'Invalid OTP' });
+      }
+      
+      if (new Date(user.rows[0].otp_expiration) < new Date()) {
+        return res.status(400).json({ error: 'OTP has expired' });
+      }
+  
+      // Update the user's is_phone_verified to true
+      await pool.query('UPDATE users SET contact_verified = true, otp = null, otp_expiration = null WHERE userid = $1', [userID]);
+
+      // Clear userID from the session after successful verification
+      delete req.session.user;
+  
+      res.json({ message: 'OTP verification successful' });
+    } catch (error) {
+      console.error('Error during OTP verification:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  });
+  
+
+router.get('/request-new-otp', async(req,res) => {
+  const userID = req.session.userID;
+  
+  try {
+    // Retrieve the user from the database based on the provided username
+    const user = await pool.query('SELECT * FROM users WHERE userid = $1', [userID]);
+
+    if (user.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Generate a 6-digit OTP
+    const newOtp = Math.floor(100000 + Math.random() * 900000);
+    const newOtpExpiration = new Date(Date.now() + 3 * 60 * 1000); // Set OTP expiration to 3 minutes from now
+
+    // Update the user's is_phone_verified to true
+    await pool.query('UPDATE users SET otp = $1, otp_expiration = $2 WHERE userid = $3', [newOtp,newOtpExpiration,userID]);
+
+    // Clear userID from the session after successful verification
+    delete req.session.user;
+
+    res.json({ message: 'New OTP has been sent.' });
+  } catch (error) {
+    console.error('Error during sending new OTP', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+})
+
+router.post('/login', async (req,res) => {
+  const { username, pass } = req.body;
+
+  try {
+    // Retrieve the user from the database based on the provided username
+    const user = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
+
+    if (user.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Compare the provided password with the hashed password from the database
+    const isPasswordValid = await bcrypt.compare(pass, user.rows[0].password);
+
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    // User is authenticated. Generate a JWT token with user information.
+    const payload = {
+      userid: user.rows[0].userid,
+      username: user.rows[0].username,
+      userrole: "general-user"
+    };
+
+    const secretKey = process.env.JWT_TOKEN_SECRET; // Replace with a strong secret key for signing the token
+    const accessToken = jwt.sign(payload, secretKey, { expiresIn: '45s' }); // Access token expires in 1 hour
+    const refreshToken = jwt.sign(payload, secretKey, { expiresIn: '1d' }); // Refresh token expires in 1 day
+
+    
+    await pool.query('DELETE FROM user_tokens WHERE userid = $1', [user.rows[0].userid]);
+    await pool.query('INSERT INTO user_tokens(userid,refresh_token) values($1,$2)', [user.rows[0].userid, refreshToken]);
+
+    res.cookie('jwt', refreshToken, {httpOnly: true, sameSite:'none', secure:true, maxAge:24*60*60*1000})
+    res.json({ accessToken });
+
+  } catch (error) {
+    console.error('Error during user login:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+})
+
+router.get('/refresh', async (req,res) => {
+  const cookies = req.cookies;
+
+  try {
+
+    if(!cookies?.jwt) return res.sendStatus(401);
+    console.log(cookies.jwt)
+    const refreshToken = cookies.jwt;
+    
+    // Retrieve the user from the database based on the provided username
+    const user = await pool.query('SELECT * FROM user_tokens WHERE refresh_token = $1', [refreshToken]);
+
+    if(!user) {
+      console.log("No user found")
+      return res.sendStatus(403); //Forbidden
+    }
+
+    // User is authenticated. Generate a JWT token with user information.
+    const payload = {
+      userid: user.rows[0].userid,
+      username: user.rows[0].username,
+      userrole: "general-user"
+    };
+
+    jwt.verify(
+      refreshToken,
+      process.env.JWT_TOKEN_SECRET,
+      (err,tokenData) =>{
+        if(err || user.rows[0].userid != tokenData.userid) return res.sendStatus(403);
+        const accessToken = jwt.sign(
+          payload,
+          process.env.JWT_TOKEN_SECRET,
+          { expiresIn: '45s' }
+        )
+        res.json({ accessToken })
+      }
+    )
+
+   
+
+  } catch (error) {
+    console.error('Error refreshing the token:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+})
+
+router.get('/logout', async (req,res) => {
+  const cookies = req.cookies;
+
+  try {
+
+    if(!cookies?.jwt) return res.sendStatus(204);
+    const refreshToken = cookies.jwt;
+    
+    // Retrieve the user from the database based on the provided username
+    const user = await pool.query('SELECT * FROM user_tokens WHERE refresh_token = $1', [refreshToken]);
+    if(!user) {
+      res.clearCookie('jwt', {httpOnly: true, sameSite:'none', secure:true});
+      return res.sendStatus(204); 
+    }
+    
+    await pool.query('DELETE FROM user_tokens WHERE userid = $1', [user.rows[0].userid]);
+
+    res.clearCookie('jwt', {httpOnly:true, sameSite:'none', secure:true});
+    res.sendStatus(204);
+  } catch (error) {
+    console.error('Error in logging out:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+})
+
+
+module.exports = router
