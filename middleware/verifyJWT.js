@@ -1,5 +1,4 @@
 const jwt = require('jsonwebtoken');
-const dotenv = require('dotenv').config();
 
 const verifyJWT = (req,res, next) =>{
     const authHeader = req.headers.authorization || req.headers.Authorization;
@@ -10,7 +9,8 @@ const verifyJWT = (req,res, next) =>{
         process.env.JWT_TOKEN_SECRET,
         (err, payload) =>{
             if(err) return res.sendStatus(403); //Invalid token
-            req.userData = payload;
+            req.user = payload;
+            req.isAuthenticated = true;
             next();  
         }
     )
