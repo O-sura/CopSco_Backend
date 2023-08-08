@@ -20,10 +20,10 @@ router.post('/verify-doc',
             let idFront = idBack = verifyImage = null;
             //console.log(files)
 
-            //Assign the file names to the correct variables
+            const parentDir = path.resolve(__dirname, '..');
 
             Object.keys(files).forEach(key => {
-                const filepath = path.join(__dirname, 'uploads/img', files[key].name);
+                const filepath = path.join(parentDir, '/uploads/img', files[key].name);
                 files[key].mv(filepath, (err) => {
                     if(err) return res.status(500).json({status:"error", message:err})
                 })
@@ -54,7 +54,18 @@ router.post('/verify-doc',
 )
 
 router.post('/video-evidence', (req,res) => {
+    //get a secure connection url to get connected into the S3-bucket
 
+    //If success
+    //Upload the object key and the relevant metadata, offense info to the database
+    //Success message to the user
+
+    //Else
+    //Return the upload error to the user
+
+    //Warning:
+    //Before reterning a url have to check whether the user is authenticated - Via middleware
+    //All clients should be able to put videos to the bucket - But not retreive all
 })
 
 module.exports = router;

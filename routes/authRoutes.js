@@ -7,6 +7,8 @@ const jwt = require('jsonwebtoken')
 const {sendOTP, sendMail} = require('../utils/authMessenger');
 const { generateOTP, generateRandomString } = require('../utils/authHelper');
 
+// const client = require('../elephantsql');
+
 
 router.post('/register', async (req,res) => {
 
@@ -51,9 +53,10 @@ router.post('/register', async (req,res) => {
               'INSERT INTO users (username, password, nic, fname, lname, secret, email, contactno, verification_mode, otp, otp_expiration) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *',
               [username, hashedPassword, nic, fname, lname, secret, email, contact, verifyMode, otp, otpExpiration]
             );
-        
+
             // Return the newly created user
             //res.json(newUser.rows[0]);
+            
             
             //call method for sending otp
             if(sendOTP(otp, contact)){
@@ -166,10 +169,12 @@ router.post('/login', async (req,res) => {
     }
 
     // User is authenticated. Generate a JWT token with user information.
+    const userrole = "general-user";
+
     const payload = {
       userid: user.rows[0].userid,
       username: user.rows[0].username,
-      userrole: "general-user"
+      userrole: userrole
     };
 
     const secretKey = process.env.JWT_TOKEN_SECRET; // Replace with a strong secret key for signing the token
@@ -181,7 +186,7 @@ router.post('/login', async (req,res) => {
     await pool.query('INSERT INTO user_tokens(userid,refresh_token) values($1,$2)', [user.rows[0].userid, refreshToken]);
 
     res.cookie('jwt', refreshToken, {httpOnly: true, sameSite:'none', secure:true, maxAge:24*60*60*1000})
-    res.json({ accessToken });
+    res.json({ userrole, accessToken });
 
   } catch (error) {
     console.error('Error during user login:', error);
@@ -206,11 +211,12 @@ router.get('/refresh', async (req,res) => {
       return res.sendStatus(403); //Forbidden
     }
 
+    const userrole = "general-user";
     // User is authenticated. Generate a JWT token with user information.
     const payload = {
       userid: user.rows[0].userid,
       username: user.rows[0].username,
-      userrole: "general-user"
+      userrole: userrole
     };
 
     jwt.verify(
@@ -223,7 +229,7 @@ router.get('/refresh', async (req,res) => {
           process.env.JWT_TOKEN_SECRET,
           { expiresIn: '15m' }
         )
-        res.json({ accessToken })
+        res.json({ userrole, accessToken })
       }
     )
 

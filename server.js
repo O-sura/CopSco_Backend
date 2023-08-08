@@ -9,6 +9,7 @@ const verifyJWT = require('./middleware/verifyJWT');
 const credentials = require('./middleware/credentials');
 const corsOptions = require('./config/corsOptions');
 const path = require('path');
+const {generateQRCode} = require('./utils/authHelper')
 
 let PORT = process.env.PORT | 8000
 
@@ -31,18 +32,23 @@ app.use(express.urlencoded({extended:false}));
 app.use(cookieParser());
 
 
-//Routes section
-// app.get('/', (req,res) => {
-//     res.sendFile(path.join(__dirname,"index.html"))
-// })
+app.get('/', (req,res) => {
+    const {secret, nic} = req.body;
+    if(generateQRCode(nic,secret)){
+        res.send("QR successfully generated")
+    }
+})
 
 app.use('/auth', require('./routes/authRoutes'));
 
 app.use('/upload', require('./routes/uploadRoutes'));
 
+app.use('/copsco', require('./routes/policeAuthRoute'));
+
 app.get('/protected', verifyJWT, (req,res) =>{
     res.send("This is a protected route")
 })
+
 
 //Server configs
 app.listen(PORT, () => {
