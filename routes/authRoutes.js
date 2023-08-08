@@ -170,10 +170,11 @@ router.post('/login', async (req,res) => {
 
     // User is authenticated. Generate a JWT token with user information.
     const userrole = "general-user";
+    const fname = user.rows[0].fname;
 
     const payload = {
       userid: user.rows[0].userid,
-      username: user.rows[0].username,
+      username: username,
       userrole: userrole
     };
 
@@ -186,7 +187,7 @@ router.post('/login', async (req,res) => {
     await pool.query('INSERT INTO user_tokens(userid,refresh_token) values($1,$2)', [user.rows[0].userid, refreshToken]);
 
     res.cookie('jwt', refreshToken, {httpOnly: true, sameSite:'none', secure:true, maxAge:24*60*60*1000})
-    res.json({ userrole, accessToken });
+    res.json({ fname, username, userrole, accessToken });
 
   } catch (error) {
     console.error('Error during user login:', error);
@@ -204,7 +205,7 @@ router.get('/refresh', async (req,res) => {
     const refreshToken = cookies.jwt;
     
     // Retrieve the user from the database based on the provided username
-    const user = await pool.query('SELECT * FROM user_tokens WHERE refresh_token = $1', [refreshToken]);
+    const user = await pool.query('SELECT ut.*, u.* FROM user_tokens ut INNER JOIN users u ON ut.userid = u.userid  WHERE ut.refresh_token = $1', [refreshToken]);
 
     if(!user) {
       console.log("No user found")
@@ -212,10 +213,12 @@ router.get('/refresh', async (req,res) => {
     }
 
     const userrole = "general-user";
+    const username = user.rows[0].username;
+    const fname = user.rows[0].fname;
     // User is authenticated. Generate a JWT token with user information.
     const payload = {
       userid: user.rows[0].userid,
-      username: user.rows[0].username,
+      username: username,
       userrole: userrole
     };
 
@@ -229,7 +232,7 @@ router.get('/refresh', async (req,res) => {
           process.env.JWT_TOKEN_SECRET,
           { expiresIn: '15m' }
         )
-        res.json({ userrole, accessToken })
+        res.json({ fname, username, userrole, accessToken })
       }
     )
 

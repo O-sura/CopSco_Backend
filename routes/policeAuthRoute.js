@@ -37,7 +37,7 @@ router.post('/login', async (req,res) => {
   
     try {
       // Retrieve the user from the database based on the provided username
-      const user = await pool.query('SELECT * FROM police_user WHERE username = $1', [username]);
+      const user = await pool.query('SELECT pu.*, po.* FROM police_user pu INNER JOIN police_officer po ON pu.username = po.officerid WHERE pu.username = $1', [username]);
   
       if (user.rows.length === 0) {
         return res.status(404).json({ error: 'User not found' });
@@ -51,6 +51,7 @@ router.post('/login', async (req,res) => {
       }
       
       const userrole = user.rows[0].userrole;
+      const fname = user.rows[0].fname;
 
       const payload = {
         username: user.rows[0].username,
@@ -66,7 +67,7 @@ router.post('/login', async (req,res) => {
       await pool.query('INSERT INTO police_user_tokens(username,refresh_token) values($1,$2)', [user.rows[0].username, refreshToken]);
   
       res.cookie('jwt', refreshToken, {httpOnly: true, sameSite:'none', secure:true, maxAge:24*60*60*1000})
-      res.json({ userrole, accessToken });
+      res.json({ fname,userrole, accessToken });
   
     } catch (error) {
       console.error('Error during user login:', error);
@@ -90,9 +91,10 @@ router.get('/refresh', async (req,res) => {
         return res.sendStatus(403); //Forbidden
       }
 
-      user = await pool.query('SELECT * FROM police_user WHERE username = $1', [user.rows[0].username]);
+      user = await pool.query('SELECT pu.*, po.* FROM police_user pu INNER JOIN police_officer po ON pu.username = po.officerid WHERE pu.username = $1', [user.rows[0].username]);
       
       const userrole = user.rows[0].userrole;
+      const fname = user.rows[0].fname;
       // User is authenticated. Generate a JWT token with user information.
       const payload = {
         username: user.rows[0].username,
@@ -109,7 +111,7 @@ router.get('/refresh', async (req,res) => {
             process.env.JWT_TOKEN_SECRET,
             { expiresIn: '15m' }
           )
-          res.json({ userrole, accessToken })
+          res.json({ fname, userrole, accessToken })
         }
       )
   
