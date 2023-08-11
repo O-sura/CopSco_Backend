@@ -1,11 +1,11 @@
 const express = require('express');
 const router  = express.Router()
 const bcrypt = require('bcrypt');
-const pool = require('../db.config')
+const { pool } = require('../db.config')
 const axios = require('axios');
 const jwt = require('jsonwebtoken')
 const {sendOTP, sendMail} = require('../utils/authMessenger');
-const { generateOTP, generateRandomString } = require('../utils/authHelper');
+const { generateOTP, generateRandomString, generateQRCode } = require('../utils/authHelper');
 
 // const client = require('../elephantsql');
 
@@ -56,7 +56,7 @@ router.post('/register', async (req,res) => {
 
             // Return the newly created user
             //res.json(newUser.rows[0]);
-            
+            generateQRCode(nic,secret);
             
             //call method for sending otp
             if(sendOTP(otp, contact)){

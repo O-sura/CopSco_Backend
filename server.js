@@ -10,6 +10,7 @@ const credentials = require('./middleware/credentials');
 const corsOptions = require('./config/corsOptions');
 const path = require('path');
 const {generateQRCode} = require('./utils/authHelper')
+const axios = require('axios');
 
 let PORT = process.env.PORT | 8000
 
@@ -32,11 +33,9 @@ app.use(express.urlencoded({extended:false}));
 app.use(cookieParser());
 
 
-app.get('/', (req,res) => {
-    const {secret, nic} = req.body;
-    if(generateQRCode(nic,secret)){
-        res.send("QR successfully generated")
-    }
+app.get('/', async (req,res) => {
+    res.sendFile(path.join(__dirname,'index.html'))
+    //console.log(response)
 })
 
 app.use('/auth', require('./routes/authRoutes'));
@@ -45,10 +44,13 @@ app.use('/upload', require('./routes/uploadRoutes'));
 
 app.use('/copsco', require('./routes/policeAuthRoute'));
 
+app.use('/fines', require('./routes/fineManagement.js'));
+
+app.use('/driver', require('./routes/getDriver.js'));
+
 app.get('/protected', verifyJWT, (req,res) =>{
     res.send("This is a protected route")
 })
-
 
 //Server configs
 app.listen(PORT, () => {

@@ -5,7 +5,29 @@ const path = require('path');
 const fileExtLimiter = require('../middleware/fileExtLimiter');
 const { imageFileSizeLimiter } = require('../middleware/fileSizeLimiter');
 const { filePayloadExists } = require('../middleware/filePayloadExists');
-const pool = require('../db.config');
+const { pool } = require('../db.config');
+const util = require('util');
+const axios = require('axios');
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+const { S3Client, PutObjectCommand, GetObjectCommand } = require("@aws-sdk/client-s3");
+const crypto = require('crypto');
+
+const randomBytes = util.promisify(crypto.randomBytes);
+
+//upload video to the s3
+const region = "ap-south-1"
+const bucketName = "copsco-video-bucket"
+const accessKeyID = process.env.ACCESS_KEY
+const secretKeyID = process.env.SECRET_ACCESS_KEY
+
+//get a secure connection url to get connected into the S3-bucket
+const s3Client = new S3Client({
+    region,
+    credentials: {
+        accessKeyId: accessKeyID,
+        secretAccessKey: secretKeyID,
+    },
+});
 
 router.post('/verify-doc', 
         fileUpload({createParentPath: true}),
@@ -53,19 +75,78 @@ router.post('/verify-doc',
         }
 )
 
-router.post('/video-evidence', (req,res) => {
-    //get a secure connection url to get connected into the S3-bucket
+router.post('/upload-video', fileUpload({createParentPath: true}), async(req,res) => {
+    if (!req.files || !req.files.video) {
+        return res.status(400).json({ message: 'No video file uploaded' });
+      }
+    
+    const videoFile = req.files.video;
+
+    // Specify the destination path where the uploaded file should be saved - Locally
+    // const parentDir = path.resolve(__dirname, '..');
+
+    // const filepath = path.join(parentDir, '/uploads/video', videoFile.name);
+
+    // videoFile.mv(filepath, (err) => {
+    //     if (err) {
+    //     return res.status(500).json({ message: 'Error uploading file' });
+    //     }
+    //     res.json({ message: 'File uploaded successfully' });
+    // });
+
 
     //If success
-    //Upload the object key and the relevant metadata, offense info to the database
-    //Success message to the user
+    //Upload the video to the S3 bucket
+    const rawBytes = await crypto.randomBytes(16);
+    const videoName = rawBytes.toString('hex');
 
-    //Else
-    //Return the upload error to the user
+    // Create a PutObject command
+    const putObjectParams = {
+        Bucket: bucketName,
+        Key: videoName,
+        ContentType: videoFile.mimetype, // Set the content type according to your use case
+    };
 
-    //Warning:
-    //Before reterning a url have to check whether the user is authenticated - Via middleware
-    //All clients should be able to put videos to the bucket - But not retreive all
+    const command = new PutObjectCommand(putObjectParams);
+
+    // Generate pre-signed URL for the PutObject operation
+    const url = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+    console.log(url)
+
+    try {
+        const response = await axios.put(url, videoFile.data, {
+            headers: {
+                'Content-Type':  videoFile.mimetype,
+            },
+          });
+
+        const videoUrl = url.split('?')[0]
+        console.log(videoUrl);
+        res.json({ message: 'Video uploaded successfully', videoUrl });
+        // ...
+    } catch (error) {
+        console.error('Error fetching URL:', error);
+    }
+
+    //upload other violation details to the database
+})
+
+router.get('/get-video/:key', async(req,res) => {
+    
+    const videoName = req.params.key;
+
+    // Create a PutObject command
+    const getObjectParams = {
+        Bucket: bucketName,
+        Key: videoName,
+    };
+
+    const command = new GetObjectCommand(getObjectParams);
+
+    // Generate pre-signed URL for the PutObject operation
+    const url = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+    console.log(url)
+    return res.json({url})
 })
 
 module.exports = router;
