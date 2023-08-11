@@ -87,7 +87,7 @@ router.post('/getDriver', async(req, res) => {
 
                 previousFines.rows.forEach(row => {
                     driverDetails.previous_fines.push({
-                        offense: row.type_of_violation,
+                        offense: row.description,   
                         date: row.date,
                         location: row.location,
                         status: row.status
