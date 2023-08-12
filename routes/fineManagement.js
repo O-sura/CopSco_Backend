@@ -80,7 +80,8 @@ router.post('/issueFines', async(req, res) => {
 
                     await fine.query('COMMIT');
                     return res.status(200).json({
-                        message: "Fine issued successfully"
+                        message: "Fine issued successfully",
+                        referenceID: reference_ID
                     });
                 }
                 catch(err)
@@ -104,20 +105,21 @@ router.post('/issueFines', async(req, res) => {
 
 });
 
-router.get('/getFineDetails', async(req, res) => {
-    const { referenceID } = req.body;
+router.get('/getFines', async(req, res) => {
+    const { nic } = req.body;
 
     try
     {
-        const fine = await pool.query("SELECT * FROM fine WHERE reference_id = $1", [referenceID]);
+        const fines = await pool.query(
+            'SELECT * FROM fine WHERE nic = $1', [nic]);
 
-        if(fine.rows.length === 0)
+        if(fines.rows.length === 0)
         {
-            return res.status(401).json({error: "Fine not found"});
+            return res.status(401).json({error: "No fines found"});
         }
         else
         {
-            return res.status(200).json(fine.rows[0]);
+            return res.status(200).json(fines.rows);
         }
     }
     catch(err)
