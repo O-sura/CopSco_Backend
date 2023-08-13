@@ -109,9 +109,10 @@ router.get('/getFines', async(req, res) => {
     const { nic } = req.body;
 
     try
-    {
+    {   
+        //get fines sort by date
         const fines = await pool.query(
-            'SELECT * FROM fine WHERE nic = $1', [nic]);
+            "SELECT * FROM fine WHERE nic = $1 ORDER BY date DESC", [nic]);
 
         if(fines.rows.length === 0)
         {
