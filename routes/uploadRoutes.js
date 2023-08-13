@@ -36,7 +36,7 @@ router.post('/verify-doc',
         imageFileSizeLimiter,
         async (req,res) => {
             const files = req.files;
-            const nic = req.nic_num;
+            const nic = req.body.nic_num;
             //const nic = "200020902030";
             //console.log("NIC:" + nic)
             let idFront = idBack = verifyImage = null;
@@ -64,12 +64,17 @@ router.post('/verify-doc',
                 }
               
             })
+            console.log("IDFRONT: " + idFront);
+            console.log("IDBACK: " + idBack);
+            console.log("VERIFY: " + verifyImage);
+            console.log("NIC: " + nic);
 
             //Update the users table with the uploaded filenames
             const updateDocs = await pool.query(
                 'UPDATE users set idfront = $1, idback = $2, verificationimage = $3 WHERE nic = $4',
                 [idFront, idBack, verifyImage, nic]
             );
+
             
             return res.json({status: 200, message: "Images successfully uploaded"});
         }
