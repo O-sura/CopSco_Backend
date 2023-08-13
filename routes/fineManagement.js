@@ -106,7 +106,7 @@ router.post('/issueFines', async(req, res) => {
 });
 
 router.get('/getFines', async(req, res) => {
-    const { nic } = req.body;
+    const { nic } = req.query;
 
     try
     {   
