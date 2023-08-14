@@ -36,7 +36,7 @@ router.post('/verify-doc',
         imageFileSizeLimiter,
         async (req,res) => {
             const files = req.files;
-            const nic = req.nic_num;
+            const nic = req.body.nic_num;
             //const nic = "200020902030";
             //console.log("NIC:" + nic)
             let idFront = idBack = verifyImage = null;
@@ -78,21 +78,36 @@ router.post('/verify-doc',
 router.post('/upload-video', fileUpload({createParentPath: true}), async(req,res) => {
     if (!req.files || !req.files.video) {
         return res.status(400).json({ message: 'No video file uploaded' });
-      }
+    }
+    
+    if (!req.files || !req.files.previewImage) {
+        return res.status(400).json({ message: 'No preview image found' });
+    }
     
     const videoFile = req.files.video;
+    const imageFile = req.files.previewImage;
 
-    // Specify the destination path where the uploaded file should be saved - Locally
-    // const parentDir = path.resolve(__dirname, '..');
+    const {
+        vehicleNum,
+        type,
+        violaton,
+        district,
+        city,
+        description
+    } = req.body;
 
-    // const filepath = path.join(parentDir, '/uploads/video', videoFile.name);
 
-    // videoFile.mv(filepath, (err) => {
-    //     if (err) {
-    //     return res.status(500).json({ message: 'Error uploading file' });
-    //     }
-    //     res.json({ message: 'File uploaded successfully' });
-    // });
+    // Specify the destination path where the preview should be saved - Locally
+    const parentDir = path.resolve(__dirname, '..');
+
+    const filepath = path.join(parentDir, '/uploads/previews', imageFile.name);
+
+    imageFile.mv(filepath, (err) => {
+        if (err) {
+        return res.status(500).json({ message: 'Error uploading file' });
+        }
+        res.json({ message: 'Image uploaded successfully' });
+    });
 
 
     //If success
@@ -120,9 +135,26 @@ router.post('/upload-video', fileUpload({createParentPath: true}), async(req,res
             },
           });
 
-        const videoUrl = url.split('?')[0]
-        console.log(videoUrl);
-        res.json({ message: 'Video uploaded successfully', videoUrl });
+        // const videoUrl = url.split('?')[0]
+        // console.log(videoUrl);
+        // Check if the response is successful (HTTP status code 2xx)
+        if (response.status >= 200 && response.status < 300) {
+            try {
+                 //Update the users table with the uploaded filenames
+                await pool.query(
+                    'INSERT INTO reported_violations(videokey,vehicleno, violationtype,district,city,description, reporterid) VALUES($1,$2, $3, $4, $5, $6, $7, $8,$9)',
+                    [videoName, vehicleNum, violaton, district, city, description]
+                );
+                
+                res.json({ message: 'Violation added to the database and video successfully uploaded', videoUrl });
+                
+            } catch (error) {
+                console.error('Error uploading video evidence:', error);
+            }
+        } else {
+            console.error('Axios request failed:', response.status, response.statusText);
+        }
+
         // ...
     } catch (error) {
         console.error('Error fetching URL:', error);
@@ -145,8 +177,44 @@ router.get('/get-video/:key', async(req,res) => {
 
     // Generate pre-signed URL for the PutObject operation
     const url = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
-    console.log(url)
     return res.json({url})
+})
+
+//getting all videos uploaded by a particular user
+router.get('/get-uploads', async(req,res) => {
+    
+    const userID = null;
+
+    const result = await pool.query(
+        'SELECT * FROM reported_violations WHERE reporterid = $1',
+        [userID]
+    );
+
+    // Map over the results to generate secure URLs for each file key
+    const resultsWithUrls = await Promise.all(result.rows.map(async (row) => {
+        const getObjectParams = {
+            Bucket: bucketName,
+            Key: row.videokey, // Assuming the file key is stored in a column named 'file_key'
+        };
+
+        const command = new GetObjectCommand(getObjectParams);
+
+        try {
+            // Generate pre-signed URL for the GetObject operation
+            const url = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+            // Return an object containing the original database result and the URL
+            return {
+                ...row,
+                url,
+            };
+        } catch (error) {
+            console.error('Error generating URL for file:', error);
+            return {
+                ...row,
+                url: null, // Or handle the error as needed
+            };
+        }
+    }));
 })
 
 module.exports = router;
