@@ -178,7 +178,7 @@ const videoUploadController = async(req,res) => {
 
 const getUserUploads = async(req,res) => {
     
-    //const userID = null;
+    //const userID = req.user;
     const userID = "2a114d7a-7046-481c-bcf3-5dd8aadeb0a0";
 
     try {

@@ -12,6 +12,7 @@ const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const { S3Client, PutObjectCommand, GetObjectCommand } = require("@aws-sdk/client-s3");
 const crypto = require('crypto');
 const uploadController = require('../controllers/uploadController');
+const {roleChecker} = require('../middleware/roleChecker');
 
 const randomBytes = util.promisify(crypto.randomBytes);
 
@@ -40,9 +41,9 @@ router.post('/verify-doc',
 
 router.post('/upload-video', fileUpload({createParentPath: true}), uploadController.videoUploadController)
 
-router.get('/view-video/:key', uploadController.viewVideo)
+router.get('/view-video/:key', roleChecker('general-user'), uploadController.viewVideo)
 
 //getting all videos uploaded by a particular user
-router.get('/get-uploads', uploadController.getUserUploads)
+router.get('/get-uploads', roleChecker('general-user'),uploadController.getUserUploads)
 
 module.exports = router;
