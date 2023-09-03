@@ -48,6 +48,8 @@ app.use('/fines', require('./routes/fineManagement.js'));
 
 app.use('/driver', require('./routes/getDriver.js'));
 
+app.use('/violations', require('./routes/handleViolationsRoutes.js'));
+
 app.get('/protected', verifyJWT, (req,res) =>{
     res.send("This is a protected route")
 })
