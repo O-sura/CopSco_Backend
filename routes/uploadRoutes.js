@@ -12,7 +12,7 @@ const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const { S3Client, PutObjectCommand, GetObjectCommand } = require("@aws-sdk/client-s3");
 const crypto = require('crypto');
 const uploadController = require('../controllers/uploadController');
-const {roleChecker} = require('../middleware/roleChecker');
+const  roleChecker  = require('../middleware/roleChecker');
 
 const randomBytes = util.promisify(crypto.randomBytes);
 
