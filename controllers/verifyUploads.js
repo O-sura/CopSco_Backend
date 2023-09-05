@@ -52,11 +52,15 @@ const viewUploadedViolations = async (req, res) => {
 
 const verifyUploads = async (req,res) => {
 
-    const { videokey, verified } = req.body;
+    const { videokey, verified,deleveryTag } = req.body;
 
     try {
         const query = 'UPDATE reported_violations SET status = $1 WHERE videokey = $2';
         const result = await pool.query(query, [verified, videokey]);
+
+        //sending acknowledgement to the queue
+        queueHandler.sendAck(deleveryTag);
+        console.log("Acknowledgement sent to the queue");
 
         return res.json({
             message: "Verified"
