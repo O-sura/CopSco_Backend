@@ -105,6 +105,28 @@ router.post('/issueFines', async(req, res) => {
 
 });
 
+router.get('/getFineDetails', async(req, res) => {
+    const { referenceID } = req.body;
+
+    try
+    {
+        const fine = await pool.query("SELECT * FROM fine WHERE reference_id = $1", [referenceID]);
+
+        if(fine.rows.length === 0)
+        {
+            return res.status(401).json({error: "Fine not found"});
+        }
+        else
+        {
+            return res.status(200).json(fine.rows[0]);
+        }
+    }
+    catch(err)
+    {
+        console.error(err.message);
+    }
+});
+
 router.get('/getFines', async(req, res) => {
     const { nic } = req.query;
 

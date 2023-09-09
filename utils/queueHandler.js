@@ -65,11 +65,14 @@ const getFromQueue = (queueName) => {
             durable: true
         });
 
+        const messages = [];
+
         channel.consume(queueName, (msg) => {
             if (msg) {
                 const msgContent = msg.content.toString();
                 console.log(" [x] Received %s", msgContent);
-                resolve(msgContent); // Resolve the Promise with msgContent
+                messages.push(msgContent);
+                resolve(messages); // Resolve the Promise with msgContent
             }
         }, {
             noAck: false
