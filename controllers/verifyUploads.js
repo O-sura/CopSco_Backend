@@ -2,14 +2,29 @@ const queueHandler = require('../utils/queueHandler');
 const { pool } = require('../db.config');
 const util = require('util');
 const axios = require('axios');
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+const { S3Client, PutObjectCommand, GetObjectCommand } = require("@aws-sdk/client-s3");
 
-const bucketName = "copsco-video-bucket";
+//upload video to the s3
+const region = "ap-south-1"
+const bucketName = "copsco-video-bucket"
+const accessKeyID = process.env.ACCESS_KEY
+const secretKeyID = process.env.SECRET_ACCESS_KEY
+
+//get a secure connection url to get connected into the S3-bucket
+const s3Client = new S3Client({
+    region,
+    credentials: {
+        accessKeyId: accessKeyID,
+        secretAccessKey: secretKeyID,
+    },
+});
 
 // Function to handle viewing uploaded violations
 const viewUploadedViolations = async (req, res) => {
     try {
         // Assuming queueHandler receives messages with violation details
-        const violationMessage = queueHandler.getFromQueue('evidence-uploaded'); 
+        const violationMessage = await queueHandler.getFromQueue('evidence-uploaded'); 
 
         if (!violationMessage) {
             return res.json({

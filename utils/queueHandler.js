@@ -1,4 +1,5 @@
 const amqp = require('amqplib/callback_api');
+const { json } = require('body-parser');
 
 let connection = null;
 let channel = null;
@@ -40,16 +41,39 @@ const publishToQueue = (queueName, message) => {
 }
 
 
-const getFromQueue = (queueName) => {
-    // This makes sure the queue is declared before attempting to consume from it
-    channel.assertQueue(queueName, {
-        durable: true
-    });
+// const getFromQueue = (queueName) => {
 
-    channel.consume(queueName, (msg) => {
-        console.log(" [x] Received %s", msg.content.toString());
-    }, {
-        noAck: false
+//     // This makes sure the queue is declared before attempting to consume from it
+//     channel.assertQueue(queueName, {
+//         durable: true
+//     });
+
+//     channel.consume(queueName, (msg) => {
+//         // console.log(" [x] Received %s", msg.content.toString());
+//         msgContent = msg.content.toString();
+//         console.log(" [x] Received %s", msgContent);
+//     }, {
+//         noAck: false
+//     });
+
+// }
+
+const getFromQueue = (queueName) => {
+    return new Promise((resolve, reject) => {
+        // This makes sure the queue is declared before attempting to consume from it
+        channel.assertQueue(queueName, {
+            durable: true
+        });
+
+        channel.consume(queueName, (msg) => {
+            if (msg) {
+                const msgContent = msg.content.toString();
+                console.log(" [x] Received %s", msgContent);
+                resolve(msgContent); // Resolve the Promise with msgContent
+            }
+        }, {
+            noAck: false
+        });
     });
 }
 
