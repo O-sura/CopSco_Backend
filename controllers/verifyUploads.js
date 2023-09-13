@@ -34,10 +34,11 @@ const viewUploadedViolations = async (req, res) => {
             });
         }
 
-        const violationData = violationMessage.map(string => JSON.parse(string));
-        console.log(violationData); 
+        // const violationData = violationMessage.map(string => JSON.parse(string));
+        // console.log(violationData); 
+        console.log(violationMessage);
 
-        for (const video of violationData) {
+        for (const video of violationMessage) {
             // Query the DB to get details about the uploads based on the violationData
             const query = 'SELECT * FROM reported_violations WHERE videokey = $1';
             const result = await pool.query(query, [video.videokey]);
@@ -54,7 +55,7 @@ const viewUploadedViolations = async (req, res) => {
                 // Getting the URL of the object
                 const url = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
 
-                videoUrls.push({ url });
+                videoUrls.push({ url ,deleveryTag: video.deliveryTag});
             }
         }
 
@@ -78,19 +79,27 @@ const viewUploadedViolations = async (req, res) => {
 
 const verifyUploads = async (req,res) => {
 
-    const { videokey, verified,deleveryTag } = req.body;
+    const { videokey, verified,deliveryTag } = req.body;
 
     try {
         const query = 'UPDATE reported_violations SET status = $1 WHERE videokey = $2';
         const result = await pool.query(query, [verified, videokey]);
 
-        //sending acknowledgement to the queue
-        queueHandler.sendAck(deleveryTag);
-        console.log("Acknowledgement sent to the queue");
+        if (result.rowCount === 0) {
+            return res.json({
+                message: "No such video found"
+            });
+        }
+        else
+        {
+            //sending acknowledgement to the queue
+            queueHandler.sendAck(deliveryTag);
 
-        return res.json({
-            message: "Verified"
-        });
+            return res.json({
+                message: "Video Verified Sucessfully and Acknowledgement sent to the queue"
+            });
+
+        }
 
     }
     catch (error) {

@@ -69,9 +69,11 @@ const getFromQueue = (queueName) => {
 
         channel.consume(queueName, (msg) => {
             if (msg) {
-                const msgContent = msg.content.toString();
-                console.log(" [x] Received %s", msgContent);
+                const msgContent = JSON.parse(msg.content.toString()); // Assuming message is JSON
+                msgContent.deliveryTag = msg.fields.deliveryTag; // Add the deliveryTag to the message object
                 messages.push(msgContent);
+
+                console.log(" [x] Received %s", JSON.stringify(msgContent));
                 resolve(messages); // Resolve the Promise with msgContent
             }
         }, {
@@ -82,7 +84,8 @@ const getFromQueue = (queueName) => {
 
 const sendAck = (deliveryTag) => {
     // Acknowledge the message by providing the delivery tag
-    channel.ack(deliveryTag);
+    const deliveryTagInt = parseInt(deliveryTag);
+    channel.ack({ fields: { deliveryTag: deliveryTagInt } });
     console.log('Acknowledgement sent');
 }
 
