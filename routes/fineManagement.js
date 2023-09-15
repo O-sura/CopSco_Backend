@@ -127,29 +127,55 @@ router.get('/getFineDetails', async(req, res) => {
     }
 });
 
-router.get('/getFines', async(req, res) => {
+router.get('/getFines', async (req, res) => {
     const { nic } = req.query;
 
-    try
-    {   
-        //get fines sort by date
+    try {
+        // Get fines sorted by date
         const fines = await pool.query(
-            "SELECT * FROM fine WHERE nic = $1 ORDER BY date DESC", [nic]);
+            "SELECT * FROM fine INNER JOIN police_divisions ON fine.police_divisionid = police_divisions.division_id WHERE nic = $1 ORDER BY date DESC",
+            [nic]
+        );
 
-        if(fines.rows.length === 0)
-        {
-            return res.status(401).json({error: "No fines found"});
+        if (fines.rows.length === 0) {
+            return res.status(401).json({ error: "No fines found" });
+        } else {
+            // Map through fines and update the status, appealBefore, and location fields
+            const updatedFines = fines.rows.map((fine) => {
+                const today = new Date();
+                const dueDate = new Date(fine.due_date);
+                const appealBefore = new Date(fine.date);
+                appealBefore.setDate(appealBefore.getDate() + 2); // Adding 2 days
+
+                if (fine.status === 0 && dueDate < today) {
+                    fine.status = "Overdue";
+                } else if (fine.status === 1) {
+                    fine.status = "Paid";
+                } else if (fine.status === 0) {
+                    fine.status = "Pending";
+                }
+
+                // Remove unwanted fields
+                delete fine.division_id;
+                delete fine.police_divisionid;
+                fine.police_division = fine.location;
+                delete fine.location;
+
+                // Add the appealBefore field
+                fine.appealBefore = appealBefore;
+
+                return fine;
+            });
+
+            return res.status(200).json(updatedFines);
         }
-        else
-        {
-            return res.status(200).json(fines.rows);
-        }
-    }
-    catch(err)
-    {
+    } catch (err) {
         console.error(err.message);
+        return res.status(500).json({ error: "Internal server error" });
     }
 });
+
+
 
 
 
