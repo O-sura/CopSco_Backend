@@ -4,6 +4,7 @@ const util = require('util');
 const axios = require('axios');
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const { S3Client, PutObjectCommand, GetObjectCommand } = require("@aws-sdk/client-s3");
+const { type } = require('os');
 
 //upload video to the s3
 const region = "ap-south-1"
@@ -24,6 +25,8 @@ const s3Client = new S3Client({
 const viewUploadedViolations = async (req, res) => {
     try {
 
+        queueHandler.createConnectionAndChannel();
+
         const videoUrls = [];
         // Assuming queueHandler receives messages with violation details
         const violationMessage = await queueHandler.getFromQueue('evidence-uploaded'); 
@@ -40,7 +43,7 @@ const viewUploadedViolations = async (req, res) => {
 
         for (const video of violationMessage) {
             // Query the DB to get details about the uploads based on the violationData
-            const query = 'SELECT * FROM reported_violations WHERE videokey = $1';
+            const query = 'SELECT * FROM reported_violations WHERE videokey = $1 AND status = \'Pending Review\'';
             const result = await pool.query(query, [video.videokey]);
 
             if (result.rows.length > 0) {
@@ -55,7 +58,7 @@ const viewUploadedViolations = async (req, res) => {
                 // Getting the URL of the object
                 const url = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
 
-                videoUrls.push({ url ,deleveryTag: video.deliveryTag});
+                videoUrls.push({ url ,deleveryTag: video.deliveryTag, videokey: video.videokey,violationtype: video.violationtype,city:video.city,date:video.reportdate});
             }
         }
 
@@ -90,7 +93,7 @@ const verifyUploads = async (req,res) => {
                 message: "No such video found"
             });
         }
-        else
+        ;
         {
             //sending acknowledgement to the queue
             queueHandler.sendAck(deliveryTag);
