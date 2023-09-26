@@ -50,6 +50,8 @@ app.use('/driver', require('./routes/getDriver.js'));
 
 app.use('/violations', require('./routes/handleVideosRoutes'));
 
+app.use('/police-division', require('./routes/verify-document-route'));
+
 app.get('/protected', verifyJWT, (req,res) =>{
     res.send("This is a protected route")
 })
