@@ -1,7 +1,7 @@
 const express = require('express');
 const router  = express.Router()
 const bcrypt = require('bcrypt');
-const pool = require('../db.config')
+const {pool} = require('../db.config')
 const axios = require('axios');
 const jwt = require('jsonwebtoken')
 

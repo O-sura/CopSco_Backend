@@ -79,6 +79,8 @@ router.post('/verify-otp', async (req, res) => {
   //get the otp and the userID
     const userID = req.session.userID;
     const { otp } = req.body;
+    console.log(userID);
+    console.log(otp);
     try {
       // Retrieve the user from the database based on the provided username
       const user = await pool.query('SELECT * FROM users WHERE userid = $1', [userID]);
@@ -89,7 +91,7 @@ router.post('/verify-otp', async (req, res) => {
       }
   
       // Check if the OTP and its expiration time match
-      if (parseInt(user.rows[0].otp) !== otp) {
+      if (parseInt(user.rows[0].otp) != otp) {
         return res.status(400).json({ error: 'Invalid OTP' });
       }
       
