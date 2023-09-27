@@ -3,7 +3,7 @@ const { pool } = require('../db.config');
 const util = require('util');
 const axios = require('axios');
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
-const { S3Client, PutObjectCommand, GetObjectCommand } = require("@aws-sdk/client-s3");
+const { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } = require("@aws-sdk/client-s3");
 const crypto = require('crypto');
 const queueHandler = require('../utils/queueHandler');
 
@@ -178,11 +178,11 @@ const videoUploadController = async(req,res) => {
 
 const getUserUploads = async(req,res) => {
     
-    //const userID = req.user;
-    const userID = "2a114d7a-7046-481c-bcf3-5dd8aadeb0a0";
+    const userID = req.user;
+    //const userID = "2a114d7a-7046-481c-bcf3-5dd8aadeb0a0";
 
     try {
-        const query = 'SELECT * FROM reported_violations WHERE reporterid = $1';
+        const query = 'SELECT * FROM reported_violations WHERE reporterid = $1 AND hidden=FALSE';
         const result = await pool.query(query, [userID]);
 
         // Extract video data and thumbnails from the result
@@ -214,9 +214,91 @@ const viewVideo = async(req,res) => {
     return res.json({url})
 }
 
+//Change the video status to hidden or unhidden
+const toggleHideVideo = async(req,res) =>{
+    
+    //Get the video id needed to hide from viewing
+    const caseID = req.body.caseID;
+    const userID = req.user;
+
+    try {
+        const query1 = 'SELECT * FROM reported_violations WHERE caseid=$1 AND reporterid=$2';
+        const res1 = await pool.query(query1, [caseID,userID]);
+
+        let current_status = res1.rows[0].hidden;
+        current_status = !(current_status);
+
+        const query2 = 'UPDATE reported_violations SET hidden=$1 WHERE caseid=$2 AND reporterid=$3';
+        const res2 = await pool.query(query, [current_status,caseID,userID]);
+
+        res.status(200).json({message: 'Updated Successfully!'});
+    } catch (error) {
+        console.error('Error fetching video data:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+
+}
+
+//Get all the hidden videos related to a particular user
+const getHiddenVideos = async(req,res) =>{
+    
+    //Get userID of the user
+    const userID = req.user;
+
+    try {
+        const query = 'SELECT * FROM reported_violations WHERE reporterid=$1 AND hidden=TRUE';
+        const result = await pool.query(query, [userID]);
+
+        // Extract video data and thumbnails from the result
+        const hiddenVideoData = result.rows
+
+        // Send the video data to the frontend
+        res.status(200).json(hiddenVideoData);
+    } catch (error) {
+        console.error('Error fetching video data:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+
+}
+
+//Delete a particular video from the user's end
+const deleteVideo = async(req,res) => {
+    const caseID = req.params.id;
+    const videoKey = req.body.key;
+    try {
+        const query = 'DELETE FROM reported_violations WHERE caseid=$1 and reporterid=$2';
+        const result = await pool.query(query, [caseID,req.user]);
+
+        if(result){
+
+            const deleteObjectParams = {
+                Bucket: bucketName,
+                Key: videoKey
+            };
+        
+            const command = new DeleteObjectCommand(deleteObjectParams);
+            let res = await S3Client.send(command);
+            console.log(res);
+            res.status(204).json({message: "Video deleted successfully"});
+            
+            // if(res.metadata.httpStatusCode == "200"){   
+            //     // Send the video data to the frontend
+            //     res.status(204).json({message: "Video deleted successfully"});
+            // }
+        }
+
+    } catch (error) {
+        console.error('Error fetching video data:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+}
+
 module.exports = {
     imageUploader,
     videoUploadController,
     getUserUploads,
-    viewVideo
+    viewVideo,
+    getHiddenVideos,
+    toggleHideVideo,
+    deleteVideo
 }

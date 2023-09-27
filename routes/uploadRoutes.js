@@ -46,4 +46,14 @@ router.get('/view-video/:key', roleChecker('general-user'), uploadController.vie
 //getting all videos uploaded by a particular user
 router.get('/get-uploads', roleChecker('general-user'),uploadController.getUserUploads)
 
+//mark as remove from view
+router.put('/hide-upload', roleChecker('general-user'), uploadController.toggleHideVideo)
+
+//get hidden videos
+router.get('/hidden-videos', roleChecker('general-user'), uploadController.getHiddenVideos)
+
+//delete the submitted video
+router.delete('/delete-video/:id', roleChecker('general-user'), uploadController.deleteVideo)
+
+
 module.exports = router;

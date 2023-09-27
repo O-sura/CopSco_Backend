@@ -5,6 +5,8 @@ const finePaymentController = require('../controllers/finePaymentController');
 
 router.get('/payfine_online', finePaymentController.payfineOnline);
 
-router.get('/payfine_manual', finePaymentController.payfineOffline);
+router.post('/notify_payment', finePaymentController.updatePaymentStatus);
+
+router.post('/payfine_manual', finePaymentController.payfineOffline);
 
 

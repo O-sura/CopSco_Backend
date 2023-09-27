@@ -48,6 +48,8 @@ app.use('/copsco', require('./routes/policeAuthRoute'));
 
 app.use('/fines', require('./routes/fineManagement.js'));
 
+app.use('/payfine', require('./routes/finePaymentRoute.js'));
+
 app.use('/driver', require('./routes/getDriver.js'));
 
 app.get('/protected', verifyJWT, (req,res) =>{

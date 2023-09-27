@@ -1,4 +1,4 @@
-const {md5} = require('crypto-js/md5');
+const md5  = require('crypto-js/md5');
 const crypto = require('crypto');
 const { pool } = require('../db.config');
 
@@ -32,9 +32,9 @@ const payfineOnline = async(req,res) => {
                 return rowData;
             });
 
-            console.log(fineDetails);
+            //console.log(fineDetails);
             // Send the video data to the frontend
-            //res.status(200).json(fineDetails);
+            res.status(200).json(fineDetails);
             
         }
     } catch (error) {
@@ -58,11 +58,14 @@ const payfineOffline = async(req,res) => {
 const updatePaymentStatus = async(req,res) => {
     const {
         merchant_id,
+        payment_id,
         order_id,
         payhere_amount,
         payhere_currency,
         status_code,
-        md5sig
+        md5sig,
+        method,
+        status_message
     } = req.body;
 
     const merchant_secret = process.env.MERCHANT_SECRET; // Replace with your Merchant Secret
@@ -82,13 +85,49 @@ const updatePaymentStatus = async(req,res) => {
 
     if (local_md5sig === md5sig && status_code === '2') {
         // TODO: Update your database as payment success
+        try {
+            const query = 'INSERT INTO payment_info(payment_id,reference_id,amount,currency,payment_status,method,md5sig) VALUES($1,$2, $3, $4, $5, $6, $7)';
+            const result = await pool.query(query, [payment_id, order_id, payhere_amount, payhere_currency, status_code, method, md5sig]);
+    
+            // Extract video data and thumbnails from the result
+        } catch (error) {
+            console.error('Error fetching video data:', error);
+            res.status(500).json({ message: 'Internal server error' });
+        }
+    }
+    else if(local_md5sig !== md5sig){
+        console.error('Error processing payment:', error);
+        res.status(500).json({ message: 'Invalid payment signature' });
+    }
+    else{
+        res.status(404).json({ message: status_message });
     }
 
-    res.status(200).send('OK');
+    res.status(200).send(status_message);
+}
+
+//Get the payment status and information about a specific payment
+const getPaymentStatus = async(req,res) => {
+    const referenceID = req.body.reference_id;
+    try {
+        const query = 'SELECT * FROM payment_info WHERE reference_id = $1';
+        const result = await pool.query(query, [referenceID]);
+
+        // Extract video data and thumbnails from the result
+        const paymentData = result.rows
+
+        // Send the video data to the frontend
+        res.status(200).json(paymentData);
+    } catch (error) {
+        console.error('Error fetching payment data:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
 }
 
 
 module.exports = {
     payfineOnline,
-    payfineOffline
+    payfineOffline,
+    updatePaymentStatus,
+    getPaymentStatus
 }
