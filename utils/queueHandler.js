@@ -1,4 +1,5 @@
 const amqp = require('amqplib/callback_api');
+const { json } = require('body-parser');
 
 let connection = null;
 let channel = null;
@@ -40,22 +41,52 @@ const publishToQueue = (queueName, message) => {
 }
 
 
-const getFromQueue = (queueName) => {
-    // This makes sure the queue is declared before attempting to consume from it
-    channel.assertQueue(queueName, {
-        durable: true
-    });
+// const getFromQueue = (queueName) => {
 
-    channel.consume(queueName, (msg) => {
-        console.log(" [x] Received %s", msg.content.toString());
-    }, {
-        noAck: false
+//     // This makes sure the queue is declared before attempting to consume from it
+//     channel.assertQueue(queueName, {
+//         durable: true
+//     });
+
+//     channel.consume(queueName, (msg) => {
+//         // console.log(" [x] Received %s", msg.content.toString());
+//         msgContent = msg.content.toString();
+//         console.log(" [x] Received %s", msgContent);
+//     }, {
+//         noAck: false
+//     });
+
+// }
+
+const getFromQueue = (queueName) => {
+    return new Promise((resolve, reject) => {
+        // This makes sure the queue is declared before attempting to consume from it
+        channel.assertQueue(queueName, {
+            durable: true
+        });
+
+        const messages = [];
+
+        channel.consume(queueName, (msg) => {
+            if (msg) {
+                const msgContent = JSON.parse(msg.content.toString()); // Assuming message is JSON
+                msgContent.deliveryTag = msg.fields.deliveryTag; // Add the deliveryTag to the message object
+                messages.push(msgContent);
+
+                console.log(" [x] Received %s", JSON.stringify(msgContent));
+                resolve(messages); // Resolve the Promise with msgContent
+                channel.close(); // Close the channel
+            }
+        }, {
+            noAck: false
+        });
     });
 }
 
 const sendAck = (deliveryTag) => {
     // Acknowledge the message by providing the delivery tag
-    channel.ack(deliveryTag);
+    const deliveryTagInt = parseInt(deliveryTag);
+    channel.ack({ fields: { deliveryTag: deliveryTagInt } });
     console.log('Acknowledgement sent');
 }
 
@@ -71,5 +102,6 @@ process.on('exit', () => {
 module.exports = {
     publishToQueue,
     getFromQueue,
-    sendAck
+    sendAck,
+    createConnectionAndChannel
 }

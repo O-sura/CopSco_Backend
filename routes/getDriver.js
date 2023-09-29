@@ -10,7 +10,7 @@ router.post('/getDriver', async(req, res) => {
 
     const { 
         licenseNumber,
-        nic
+        codeText
      } = req.body;
 
     let driver;
@@ -24,26 +24,47 @@ router.post('/getDriver', async(req, res) => {
             driver = await rmvPool.query(
                 'SELECT rmv_users.*,rmv_vehicle_category.* FROM rmv_users INNER JOIN rmv_vehicle_category ON rmv_users.license_number = rmv_vehicle_category.license_number WHERE rmv_users.license_number = $1'
                 , [licenseNumber]);
-        }
-        if(nic)
-        {
-            //check driver details
-            driver = await rmvPool.query(
-                'SELECT rmv_users.*,rmv_vehicle_category.* FROM rmv_users INNER JOIN rmv_vehicle_category ON rmv_users.license_number = rmv_vehicle_category.license_number WHERE rmv_users.nic = $1'
-                , [nic]);
-        }
-
+            
             if(driver.rows.length === 0)
             {
                 return res.status(401).json({error: "Driver's license number is not valid"});
             }
-            else
+        }
+        if(codeText)
+        {
+            //codeText = "nic - secret key"
+            let nic = codeText.split("-")[0];
+            let secretKey = codeText.split("-")[1];
+
+            const user = await pool.query(
+                'SELECT * FROM users WHERE nic = $1'
+                , [nic]);
+
+            userSecretKey = user.rows[0].secret;
+            if(userSecretKey !== secretKey)
             {
+                return res.status(401).json({error: "Cannot validate the user's QR code"});
+            }
+
+            //check driver details
+            driver = await rmvPool.query(
+                'SELECT rmv_users.*,rmv_vehicle_category.* FROM rmv_users INNER JOIN rmv_vehicle_category ON rmv_users.license_number = rmv_vehicle_category.license_number WHERE rmv_users.nic = $1'
+                , [nic]);
+            
+            if(driver.rows.length === 0)
+            {
+                return res.status(401).json({error: "Error occured! Scan the QR again"});
+            }
+        }
+
                 let NIC = driver.rows[0].nic;
-                let userID = await pool.query(
-                    'SELECT userid FROM users WHERE nic = $1'
+                const userDetails = await pool.query(
+                    'SELECT * FROM users WHERE nic = $1'
                     , [NIC]);
                 
+                let userID = userDetails.rows[0].userid;
+                let contact = userDetails.rows[0].contactno;
+
 
                 const previousFines = await pool.query(
                     'SELECT * FROM fine INNER JOIN police_divisions ON fine.police_divisionid = police_divisions.division_id WHERE nic = $1'
@@ -51,15 +72,16 @@ router.post('/getDriver', async(req, res) => {
                 
                 const totalDemeritPoints = await pool.query(
                     'SELECT tot_demerit_points FROM license_status WHERE user_id = $1'
-                    , [userID.rows[0].userid]);
+                    , [userID]);
 
                 const licenseStatus = await pool.query(
                     'SELECT license_status FROM license_status WHERE user_id = $1'
-                    , [userID.rows[0].userid]);
+                    , [userID]);
                 
                 const driverDetails = {
                     license_number: driver.rows[0].license_number,
                     surname: driver.rows[0].surname,
+                    contact: contact,
                     other_names: driver.rows[0].other_names,
                     address: driver.rows[0].address,
                     nic: driver.rows[0].nic,
@@ -83,7 +105,7 @@ router.post('/getDriver', async(req, res) => {
 
                 previousFines.rows.forEach(row => {
                     driverDetails.previous_fines.push({
-                        offense: row.type_of_violation,
+                        offense: row.description,   
                         date: row.date,
                         location: row.location,
                         status: row.status
@@ -93,7 +115,6 @@ router.post('/getDriver', async(req, res) => {
 
 
                 return res.status(200).json(driverDetails);
-            }
 
         
     }
