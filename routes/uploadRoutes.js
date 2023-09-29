@@ -44,7 +44,7 @@ router.post('/upload-video', fileUpload({createParentPath: true}), uploadControl
 router.get('/view-video/:key', roleChecker('general-user'), uploadController.viewVideo)
 
 //getting all videos uploaded by a particular user
-router.get('/get-uploads', roleChecker('general-user'),uploadController.getUserUploads)
+router.get('/get-uploads', roleChecker('general-user'), uploadController.getUserUploads)
 
 //mark as remove from view
 router.put('/hide-upload', roleChecker('general-user'), uploadController.toggleHideVideo)
