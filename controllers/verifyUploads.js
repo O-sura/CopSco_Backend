@@ -112,7 +112,7 @@ const viewUploadedViolations = async (req, res) => {
 
 const getPastViolations = async (req,res) => {
     
-        const { violations,vehicle_no } = req.body;
+        const { violations,vehicle_no } = req.query;
 
         // console.log(violations)
         let pastViolations = []
