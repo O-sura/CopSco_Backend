@@ -5,8 +5,8 @@ const { pool } = require('../db.config');
 //controller function for handling the online fine payment process
 const payfineOnline = async(req,res) => {
 
-    let {fineID} = req.body;
-
+    let {fineID} =  req.query;
+    console.log(fineID);
     try {
         const query = 'SELECT * FROM fine WHERE reference_id = $1'; //Must select only the appropriate columns
         const result = await pool.query(query, [fineID]);
@@ -26,9 +26,10 @@ const payfineOnline = async(req,res) => {
                 // Extract row data into a new object
                 const rowData = {
                     ...row,
-                    hash: generatedHash // Add the external key-value pair
+                    hash: generatedHash, // Add the external key-value pair
+                    merchant_id: merchantId
                 };
-                
+                    
                 return rowData;
             });
 
