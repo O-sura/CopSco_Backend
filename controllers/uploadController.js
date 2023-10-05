@@ -76,25 +76,28 @@ const videoUploadController = async(req,res) => {
     const videoFile = req.files.video;
     const imageFile = req.files.previewImage;
 
-    const previewImageName = imageFile.name
+    //Upload the video to the S3 bucket
+    const rawBytes = await crypto.randomBytes(16);
+    const videoName = rawBytes.toString('hex');
+    const previewImageName = videoName
 
-    // const {
-    //     vehicleNum,
-    //     type,
-    //     violaton,
-    //     district,
-    //     city,
-    //     description
-    // } = req.body;
+    const {
+        vehicleNum,
+        type,
+        violaton,
+        district,
+        city,
+        description
+    } = req.body;
 
-     const vehicleNum = "TestData"
-     const type = "TestData"
-     const violaton = "TestData"
-     const district = "TestData"
-     const city = "TestData"
-     const description = "TestData"
+    //  const vehicleNum = "TestData"
+    //  const type = "TestData"
+    //  const violaton = "TestData"
+    //  const district = "TestData"
+    //  const city = "TestData"
+    //  const description = "TestData"
 
-    const userid = "2a114d7a-7046-481c-bcf3-5dd8aadeb0a0"
+    const userid = req.user;
     const metadata = null;
     
 
@@ -120,10 +123,6 @@ const videoUploadController = async(req,res) => {
 
 
     //If success
-    //Upload the video to the S3 bucket
-    const rawBytes = await crypto.randomBytes(16);
-    const videoName = rawBytes.toString('hex');
-
     // Create a PutObject command
     const putObjectParams = {
         Bucket: bucketName,
@@ -277,7 +276,7 @@ const deleteVideo = async(req,res) => {
             };
         
             const command = new DeleteObjectCommand(deleteObjectParams);
-            let res = await S3Client.send(command);
+            let res = await s3Client.send(command);
             console.log(res);
             res.status(204).json({message: "Video deleted successfully"});
             

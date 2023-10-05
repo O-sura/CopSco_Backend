@@ -39,7 +39,7 @@ router.post('/verify-doc',
         uploadController.imageUploader
 )
 
-router.post('/upload-video', fileUpload({createParentPath: true}), uploadController.videoUploadController)
+router.post('/upload-video', roleChecker('general-user'), fileUpload({createParentPath: true}), uploadController.videoUploadController)
 
 router.get('/view-video/:key', roleChecker('general-user'), uploadController.viewVideo)
 

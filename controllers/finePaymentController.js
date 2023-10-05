@@ -5,7 +5,7 @@ const { pool } = require('../db.config');
 //controller function for handling the online fine payment process
 const payfineOnline = async(req,res) => {
 
-    let {fineID} = req.body;
+    let {fineID} = req.query;
 
     try {
         const query = 'SELECT * FROM fine WHERE reference_id = $1'; //Must select only the appropriate columns
@@ -26,7 +26,9 @@ const payfineOnline = async(req,res) => {
                 // Extract row data into a new object
                 const rowData = {
                     ...row,
+                    merchantID: merchantId,
                     hash: generatedHash // Add the external key-value pair
+
                 };
                 
                 return rowData;
@@ -46,11 +48,19 @@ const payfineOnline = async(req,res) => {
 
 //controller function for handling the manual fine payment process
 const payfineOffline = async(req,res) => {
-    const { fineID } = req.body
+    const { fineID } = req.query;
     try {
-        
+        const query = 'UPDATE payment_info SET  WHERE reference_id = $1';
+        const result = await pool.query(query, [fineID]);
+
+        if(result){            
+            res.status(200).json({message:'Payment successful'});
+        }else{
+            res.status(404).json({message:'Could not update the payment status. Try again later.'});
+        }
     } catch (error) {
-        
+        console.error('Error fetching payment data:', error);
+        res.status(500).json({ message: 'Internal server error' });
     }
 }    
 
@@ -89,7 +99,7 @@ const updatePaymentStatus = async(req,res) => {
             const query = 'INSERT INTO payment_info(payment_id,reference_id,amount,currency,payment_status,method,md5sig) VALUES($1,$2, $3, $4, $5, $6, $7)';
             const result = await pool.query(query, [payment_id, order_id, payhere_amount, payhere_currency, status_code, method, md5sig]);
     
-            // Extract video data and thumbnails from the result
+            // Update the fine status to paid if only the status is a success
         } catch (error) {
             console.error('Error fetching video data:', error);
             res.status(500).json({ message: 'Internal server error' });
@@ -113,10 +123,8 @@ const getPaymentStatus = async(req,res) => {
         const query = 'SELECT * FROM payment_info WHERE reference_id = $1';
         const result = await pool.query(query, [referenceID]);
 
-        // Extract video data and thumbnails from the result
         const paymentData = result.rows
 
-        // Send the video data to the frontend
         res.status(200).json(paymentData);
     } catch (error) {
         console.error('Error fetching payment data:', error);
