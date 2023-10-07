@@ -48,11 +48,20 @@ app.use('/fines', require('./routes/fineManagement.js'));
 
 app.use('/driver', require('./routes/getDriver.js'));
 
+app.use('/admin', require('./routes/getUsersRoute.js'));
+
+app.use('/admin', require('./routes/createUsersRoute.js'));
+
+app.use('/admin', require('./routes/dashboardRoute.js'));
+
+
 app.get('/protected', verifyJWT, (req,res) =>{
     res.send("This is a protected route")
 })
+
 
 //Server configs
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`)
 })
+
