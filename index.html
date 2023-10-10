@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Node.js File Uploader</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 1.5rem;
+            background-color: #333;
+            color: whitesmoke;
+        }
+
+        input,
+        button {
+            font: inherit;
+            width: max-content;
+        }
+
+        form {
+            display: flex;
+            flex-flow: column nowrap;
+            gap: 1.5rem;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Node.js File Uploader</h1>
+    <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" id="myFiles" accept="video/*"/>
+        <input type="file" id="myFiles2" accept="image/*"/>
+        <button>Submit</button>
+    </form>
+    <h2></h2>
+    <h3></h3>
+    <script>
+        const form = document.getElementById('uploadForm')
+
+        const sendFiles = async () => {
+            // Object 
+            const videoFile = document.getElementById('myFiles').files[0]
+            const imageFile = document.getElementById('myFiles2').files[0]
+
+            // const {url} = await fetch('http://localhost:8000/upload/get-url').then(res => res.json())
+            // console.log(url)
+
+
+            // const response = await fetch(url, {
+            //     method: 'POST',
+            //     body: formData
+            // })
+        
+            
+            if (!videoFile) {
+                alert('Please select a video file.');
+                return;
+            }
+
+            if (!imageFile) {
+                alert('Please select a image file.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('video', videoFile);
+            formData.append('previewImage', imageFile);
+            
+            
+            try {
+                const response = await fetch('http://localhost:8000/upload/upload-video', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const data = await response.json();
+                alert(data.message);
+            } catch (error) {
+                console.error('Error uploading video:', error);
+                alert('An error occurred while uploading the video.');
+            }
+
+           
+        }
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault()
+            sendFiles()
+        })
+    </script>
+</body>
+
+</html>
