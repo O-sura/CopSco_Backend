@@ -17,4 +17,6 @@ router.get('/viewVerifiedVideos', handleVideos.viewVerifiedVideos);
 
 router.get('/viewVerifiedVideoDetails', handleVideos.viewVerifiedVideoDetails);
 
+router.post('/issueFine', handleVideos.video_issueFine);
+
 module.exports = router;

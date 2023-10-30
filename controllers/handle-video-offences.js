@@ -120,13 +120,37 @@ const video_issueFine = async (req, res) => {
 
             //get user tier to calculate reward
             const tier = await pool.query("SELECT tier FROM users WHERE nic = $1", [nic]);
+            let reward_percentage = 0;
+            
+            switch(tier.rows[0].tier)
+            {
+                case 'bronze':
+                    reward_percentage = 0.05;
+                    break;
+                case 'silver':
+                    reward_percentage = 0.07;
+                    break;
+                case 'gold':
+                    reward_percentage = 0.1;
+                    break;
+                case 'platinum':
+                    reward_percentage = 0.12;
+                    break;
+                case 'diamond':
+                    reward_percentage = 0.15;
+                    break;
+                default:
+                    break;
+            }
+
+            return res.status(200).json({message: reward_percentage});
 
             const reward = [];
 
-            //calculate reward for each violation based on fineAmount
-            for (const violation of fineAmount) {
-                reward.push(violation * 0.1);
-            }
+            // //calculate reward for each violation based on fineAmount
+            // for (const violation of fineAmount) {
+            //     reward.push(violation * 0.1);
+            // }
         }
     }
     catch(err)

@@ -40,6 +40,8 @@ app.get('/', async (req,res) => {
 
 app.use('/auth', require('./routes/authRoutes'));
 
+app.use('/images', express.static(path.join(__dirname, 'uploads')));
+
 app.use('/upload', require('./routes/uploadRoutes'));
 
 app.use('/copsco', require('./routes/policeAuthRoute'));
