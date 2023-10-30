@@ -55,5 +55,7 @@ router.get('/hidden-videos', roleChecker('general-user'), uploadController.getHi
 //delete the submitted video
 router.delete('/delete-video/:id', roleChecker('general-user'), uploadController.deleteVideo)
 
+//get video fine details
+router.get('/video-fines', roleChecker('general-user'), uploadController.getUserVideoFines)
 
 module.exports = router;
