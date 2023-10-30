@@ -22,7 +22,7 @@ const viewDocuments = async (req, res) => {
         else
         {
             for (const document of result.rows) {
-                documents.push({ name: document.fname + " " + document.lname, NICfrontview : document.idfront, NICreartview : document.idback, location : document.division_name,
+                documents.push({ name: document.fname + " " + document.lname, NICfrontview : document.idfront, NICreartview : document.idback,verificationImage:document.verificationimage, location : document.division_name,
                  fullname : document.fname + " " + document.lname, NIC : document.nic});
             }
             return res.json({
