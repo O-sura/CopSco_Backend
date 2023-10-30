@@ -1,15 +1,9 @@
 const { pool } = require("../db.config");
-const { sendOTP, sendMail } = require("../utils/authMessenger");
-const {
-  generateOTP,
-  generateRandomString,
-  generateQRCode,
-} = require("../utils/authHelper");
 const bcrypt = require("bcrypt");
 
 const createUsers = async (request, response) => {
   try {
-    const { policeid, userrole } = request.body;
+    const { policeid, userrole} = request.body;
 
     const user = await pool.query(
       "SELECT * FROM police_user WHERE username = $1",
@@ -49,6 +43,7 @@ const createUsers = async (request, response) => {
           message: "User successfully created",
         });
       }
+
     }
   } catch (error) {
     console.error(error);
@@ -58,4 +53,4 @@ const createUsers = async (request, response) => {
   }
 };
 
-module.exports = createUsers;
+module.exports = {createUsers};

@@ -48,11 +48,7 @@ app.use('/fines', require('./routes/fineManagement.js'));
 
 app.use('/driver', require('./routes/getDriver.js'));
 
-app.use('/admin', require('./routes/getUsersRoute.js'));
-
-app.use('/admin', require('./routes/createUsersRoute.js'));
-
-app.use('/admin', require('./routes/dashboardRoute.js'));
+app.use('/admin', require('./routes/adminRoute.js'));
 
 
 app.get('/protected', verifyJWT, (req,res) =>{
