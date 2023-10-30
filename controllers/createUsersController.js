@@ -53,4 +53,43 @@ const createUsers = async (request, response) => {
   }
 };
 
-module.exports = {createUsers};
+const updateUserRole = async (request, response) => {
+  try {
+      const { userId, newUserRole } = request.body;
+
+      // Check if the user with the given userId exists
+      const userExists = await pool.query("SELECT * FROM users WHERE id = $1", [userId]);
+
+      if (userExists.rows.length === 0) {
+          return response.status(400).json({
+              message: "User not found"
+          });
+      }
+
+      // Update the user's role
+      const updateQuery = "UPDATE users SET userrole = $1 WHERE id = $2";
+      const values = [newUserRole, userId];
+
+      const result = await pool.query(updateQuery, values);
+
+      if (result.rowCount === 1) {
+          return response.status(200).json({
+              message: "User role updated successfully"
+          });
+      } else {
+          return response.status(400).json({
+              message: "Failed to update user role"
+          });
+      }
+  } catch (error) {
+      console.error(error);
+      return response.status(500).json({
+          message: "Internal server error"
+      });
+  }
+};
+
+
+
+
+module.exports = {createUsers, updateUserRole};
