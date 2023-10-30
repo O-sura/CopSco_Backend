@@ -20,8 +20,9 @@ const getProfileData = async(req, res) => {
     //RMV -> use nic to find relevant RMV user and get license no
     //Using license no -> find all registered vehicals under that no.
     //info needed -> plate no, ab owner, engine no, chassis no, category, brand, model, 
-    query = "SELECT * FROM dmv WHERE userid = $1";
-    const vehicleInfoRes = await pool.query(query, [userID]);
+    const userNic = userInfoRes.rows[0].nic;
+    query = "SELECT * FROM dmv WHERE current_owner_nic = $1";
+    const vehicleInfoRes = await pool.query(query, [userNic]);
 
 
     // Create a combined JSON object
@@ -163,7 +164,26 @@ const withdrawRewards = async(req, res) => {
   const userID = req.user;
   const amount = req.body.amount;
 
-  //Deduct the amount if available
+  try {
+    let query = "SELECT amount FROM reward WHERE userid = $1";
+    let result = await pool.query(query, [userID]);
+
+    if(result){
+      let curr_balance = result.rows[0].amount;
+      //If the current reward balance is less than the specified amount -> Error should be given
+      if(curr_balance < amount){
+        return res.status(404).json({message: "Not enough balance to withdraw the specified amount."});
+      }else{
+        let new_balance = curr_balance - amount;
+        query = "UPDATE reward SET amount=$2 WHERE userid = $1";
+        result = await pool.query(query, [userID, new_balance]);
+        return res.status(200).json({message: "Reward withdrawed successfully."});
+      }
+    }
+  } catch (error) {
+    console.error("Error: Cannot withdraw the reward", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 };
 
 
