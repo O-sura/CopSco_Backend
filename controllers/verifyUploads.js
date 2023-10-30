@@ -148,7 +148,7 @@ const getPastViolations = async (req,res) => {
 
 const verifyUploads = async (req,res) => {
 
-    const { caseID,offences,divisionCode,violationStatus,remarks } = req.body;
+    const { caseID,offences,divisionCode,violationStatus,remarks,deliveryTag } = req.body;
     const priviewImage = req.files.priviewImage;
 
     try {
@@ -195,6 +195,9 @@ const verifyUploads = async (req,res) => {
                 message: "Video Verified Sucessfully"
             });
         }
+
+        //sending acknowledgement to the queue
+        queueHandler.sendAck(deliveryTag);
 
 
     }
