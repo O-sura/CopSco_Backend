@@ -94,4 +94,47 @@ const viewVerifiedVideoDetails = async (req, res) => {
     }
 };
 
-module.exports = {viewVerifiedVideos,viewVerifiedVideoDetails}
+const video_issueFine = async (req, res) => {
+    const { 
+        date,
+        time,
+        vehicleNumber,
+        // vehicleProvince,
+        policeDivisionID,
+        description,
+        typeOfOffence,
+        fineAmount,
+        demeritPoints,
+        licenseNumber
+    } = req.body;
+
+    try {
+        const vehicleUser = await pool.query("SELECT * FROM dmv WHERE plate_no = $1", [vehicleNumber]);
+        if(vehicleUser.rows.length === 0)
+        {
+            return res.status(401).json({error: "Vehicle not found"});
+        }
+        else
+        {
+            const nic = vehicleUser.rows[0].current_owner_nic;
+
+            //get user tier to calculate reward
+            const tier = await pool.query("SELECT tier FROM users WHERE nic = $1", [nic]);
+
+            const reward = [];
+
+            //calculate reward for each violation based on fineAmount
+            for (const violation of fineAmount) {
+                reward.push(violation * 0.1);
+            }
+        }
+    }
+    catch(err)
+    {
+        // await fine.query('ROLLBACK');
+        console.error(err.message);
+        return res.status(401).json({error: "Error issuing fine, please try again"});
+    }
+}
+
+module.exports = {viewVerifiedVideos,viewVerifiedVideoDetails, video_issueFine}

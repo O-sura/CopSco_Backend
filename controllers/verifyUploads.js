@@ -58,7 +58,8 @@ const viewUploadedViolations = async (req, res) => {
                 // Getting the URL of the object
                 const url = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
 
-                videoUrls.push({ url ,deleveryTag: video.deliveryTag, videokey: video.videokey,violationtype: video.violationtype,city:video.city,date:video.reportdate,description:video.description,thumbnail:video.thumbnail,caseID : video.caseid});
+                videoUrls.push({ url ,deleveryTag: video.deliveryTag, videokey: video.videokey,violationtype: video.violationtype,city:video.city,date:video.reportdate,description:video.description,thumbnail:video.thumbnail,caseID : video.caseid,
+                vehicleno:video.vehicleno,district:video.district,city:video.city,vehicleType:video.vehicletype});
             }
         }
 
