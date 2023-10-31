@@ -41,7 +41,7 @@ const viewUploadedViolations = async (req, res) => {
 
         // const violationData = violationMessage.map(string => JSON.parse(string));
         // console.log(violationData); 
-        // console.log(violationMessage);
+        console.log(violationMessage);
 
         for (const video of violationMessage) {
             // Query the DB to get details about the uploads based on the violationData

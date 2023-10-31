@@ -8,7 +8,7 @@ const addPoliceOfficers = async (req, res) => {
 
     try{
             
-        const query = "SELECT * FROM police_officer WHERE officer_id = $1 OR nic = $2";
+        const query = "SELECT * FROM police_officer WHERE officerid = $1 OR nic = $2";
         const police_officer = await pool.query(query, [officerID,nic]);
 
         if(police_officer.rows.length === 0){
