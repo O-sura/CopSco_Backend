@@ -63,6 +63,12 @@ const viewUploadedViolations = async (req, res) => {
                 videoUrls.push({ url ,deleveryTag: video.deliveryTag, videokey: video.videokey,violationtype: video.violationtype,city:video.city,date:video.reportdate,description:video.description,thumbnail:video.thumbnail,caseID : video.caseid,
                 vehicleno:video.vehicleno,district:video.district,city:video.city,vehicleType:video.vehicletype,violationDate:video.violation_date,violationTime:video.violation_time});
             }
+            else
+            {
+                return res.json({
+                    message: "No such video found"
+                });
+            }
         }
 
         if (videoUrls.length === 0) {

@@ -37,7 +37,7 @@ const viewVerifiedVideos = async (req, res) => {
             else
             {
                 for (const video of result.rows) {
-                    videos.push({ caseID : video.caseid, district : video.district, date : video.reportdate, thumbnail : video.thumbnail,city : video.city,divisionStatus :video.division_status,remarks:video.remarks});
+                    videos.push({ caseID : video.caseid, district : video.district, date : video.reportdate, thumbnail : video.thumbnail,city : video.city,divisionStatus :video.division_status,remarks:video.remarks,videoKey:video.videokey});
                 }
                 return res.json({
                     videos

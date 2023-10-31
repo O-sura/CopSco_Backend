@@ -86,9 +86,13 @@ const getFromQueue = (queueName) => {
 const sendAck = (deliveryTag) => {
     // Acknowledge the message by providing the delivery tag
     const deliveryTagInt = parseInt(deliveryTag);
+    console.log(typeof(deliveryTagInt));
     channel.ack({ fields: { deliveryTag: deliveryTagInt } });
     console.log('Acknowledgement sent');
 }
+
+
+
 
 // Close the connection when the application exits
 process.on('exit', () => {
