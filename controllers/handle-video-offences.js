@@ -82,7 +82,7 @@ const viewVerifiedVideoDetails = async (req, res) => {
 
             return res.json({
                 caseID : video.caseid,district : video.district,city : video.city, date : video.reportdate, thumbnail : video.thumbnail, description : video.description, violations : video.verified_violations, remarks : video.remarks,
-                videoLink : url,vehicleno:video.vehicleNumber
+                videoLink : url,vehicleno:video.vehicleno
             });
 
 
