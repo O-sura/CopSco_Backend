@@ -117,25 +117,26 @@ const getPastViolations = async (req,res) => {
     
         const { violations,vehicle_no } = req.query;
 
-        // console.log(violations)
         let pastViolations = []
 
         try{
             for (const listViolations of violations) {
                 const query =
-                  'SELECT * FROM reported_violations INNER JOIN police_divisions ON reported_violations.division_id = police_divisions.division_id WHERE vehicleno = $1 AND $2 = ANY(verified_violations)';
+                  'SELECT * FROM reported_violations WHERE vehicleno = $1 AND $2 = ANY(verified_violations)';
                 const result = await pool.query(query, [vehicle_no, listViolations]);
-            
+                console.log(result.rows);
                 for (const row of result.rows) {
                   pastViolations.push({ image: row.thumbnail, description: row.description, location: row.location, date: row.reportdate});
                 }
               }
-            
+             
               if (pastViolations.length > 0) {
+     
                 return res.json({
                   pastViolations: pastViolations,
                 });
               } else {
+              
                 return res.json({
                   message: "No such video found",
                 });
