@@ -67,6 +67,9 @@ router.post('/login', async (req,res) => {
       await pool.query('INSERT INTO police_user_tokens(username,refresh_token) values($1,$2)', [user.rows[0].username, refreshToken]);
   
       res.cookie('jwt', refreshToken, {httpOnly: true, sameSite:'none', secure:true, maxAge:24*60*60*1000})
+
+      await pool.query('UPDATE police_user SET last_login = CURRENT_TIMESTAMP WHERE username = $1', [user.rows[0].username]);
+
       res.json({ fname,userrole, accessToken });
   
     } catch (error) {

@@ -189,6 +189,9 @@ router.post('/login', async (req,res) => {
     await pool.query('INSERT INTO user_tokens(userid,refresh_token) values($1,$2)', [user.rows[0].userid, refreshToken]);
 
     res.cookie('jwt', refreshToken, {httpOnly: true, sameSite:'none', secure:true, maxAge:24*60*60*1000})
+
+    await pool.query('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE userID = $1', [user.rows[0].userid]);
+
     res.json({ fname, username, userrole, accessToken });
 
   } catch (error) {
