@@ -81,8 +81,8 @@ const viewVerifiedVideoDetails = async (req, res) => {
             const url = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
 
             return res.json({
-                caseID : video.caseid, location : video.location, date : video.reportdate, thumbnail : video.thumbnail, description : video.description, violations : video.verified_violations, remarks : video.remarks,
-                videoLink : url
+                caseID : video.caseid,district : video.district,city : video.city, date : video.reportdate, thumbnail : video.thumbnail, description : video.description, violations : video.verified_violations, remarks : video.remarks,
+                videoLink : url,vehicleno:video.vehicleNumber
             });
 
 
