@@ -1,4 +1,5 @@
 const {pool} = require('../db.config');
+const { v4: uuidv4 } = require('uuid');
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const { S3Client, PutObjectCommand, GetObjectCommand } = require("@aws-sdk/client-s3");
 
@@ -143,14 +144,20 @@ const video_issueFine = async (req, res) => {
                     break;
             }
 
-            return res.status(200).json({message: reward_percentage});
 
             const reward = [];
 
-            // //calculate reward for each violation based on fineAmount
-            // for (const violation of fineAmount) {
-            //     reward.push(violation * 0.1);
-            // }
+            //calculate reward for each violation based on fineAmount
+            for (const violation of fineAmount) {
+                reward.push(violation * reward_percentage);
+            }
+
+            //insert in to the fine table each violation
+            for (let i = 0; i < typeOfOffence.length; i++) {
+                const fine = await pool.query("INSERT INTO fine (date, time, vehicle_no, division_id, description, type_of_offence, fine_amount, demerit_points, license_no, reward) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)", 
+                [date, time, vehicleNumber, policeDivisionID, description, typeOfOffence[i], fineAmount[i], demeritPoints[i], licenseNumber, reward[i]]);
+            }
+
         }
     }
     catch(err)

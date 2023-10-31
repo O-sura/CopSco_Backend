@@ -2,6 +2,8 @@ const queueHandler = require('../utils/queueHandler');
 const { pool } = require('../db.config');
 const util = require('util');
 const axios = require('axios');
+const path = require('path');
+const fs = require('fs');
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const { S3Client, PutObjectCommand, GetObjectCommand } = require("@aws-sdk/client-s3");
 const { type } = require('os');
@@ -59,7 +61,7 @@ const viewUploadedViolations = async (req, res) => {
                 const url = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
 
                 videoUrls.push({ url ,deleveryTag: video.deliveryTag, videokey: video.videokey,violationtype: video.violationtype,city:video.city,date:video.reportdate,description:video.description,thumbnail:video.thumbnail,caseID : video.caseid,
-                vehicleno:video.vehicleno,district:video.district,city:video.city,vehicleType:video.vehicletype});
+                vehicleno:video.vehicleno,district:video.district,city:video.city,vehicleType:video.vehicletype,violationDate:video.violation_date,violationTime:video.violation_time});
             }
         }
 
@@ -151,6 +153,8 @@ const verifyUploads = async (req,res) => {
 
     const { caseID,offences,divisionCode,violationStatus,remarks,deliveryTag } = req.body;
     const priviewImage = req.files.priviewImage;
+    // Convert the comma-separated string into an array
+    const offencesArray = offences.split(',');
 
     try {
 
@@ -186,7 +190,7 @@ const verifyUploads = async (req,res) => {
 
         //updating the reported_violations table
         const query2 = 'UPDATE reported_violations SET verified_violations = $1, division_id = $2, status = $3,remarks = $4 WHERE caseid = $5';
-        const result2 = await pool.query(query2, [offences, divisionCode, violationStatus,remarks, caseID]);
+        const result2 = await pool.query(query2, [offencesArray, divisionCode, violationStatus,remarks, caseID]);
 
         if(result2.rowCount === 0){
             return res.status(500).json({ message: 'Error updating the table' });
@@ -198,7 +202,9 @@ const verifyUploads = async (req,res) => {
         }
 
         //sending acknowledgement to the queue
-        queueHandler.sendAck(deliveryTag);
+        // queueHandler.sendAck(deliveryTag);
+        console.log(req.body);
+        console.log(req.files);
 
 
     }

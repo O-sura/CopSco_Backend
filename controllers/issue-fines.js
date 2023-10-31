@@ -52,7 +52,7 @@ const issueFines = async(req, res) => {
             else
             {
                 //generate a uuid for the reference id
-                const reference_ID = uuidv4();
+                // const reference_ID = uuidv4();
 
                 //set due date two weeks after the current date
                 const currentDate = new Date();
@@ -69,8 +69,8 @@ const issueFines = async(req, res) => {
                 try
                 {
                     await fine.query('BEGIN');
-                    const queryText = "INSERT INTO fine (reference_id, date, time, vehicle_number, vehicle_province, police_divisionid, type_of_offence, amount, demerit_points, due_date, nic,description) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10,$11,$12) RETURNING *";
-                    const queryValues = [reference_ID, date, time, vehicleNumber, vehicleProvince, policeDivisionID, typeOfOffence, fineAmount, demeritPoints, dueDate, NIC,description];
+                    const queryText = "INSERT INTO fine ( date, time, vehicle_number, police_divisionid, type_of_offence, amount, demerit_points, due_date, nic,description) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *";
+                    const queryValues = [ date, time, vehicleNumber, policeDivisionID, typeOfOffence, fineAmount, demeritPoints, dueDate, NIC,description];
                     await fine.query(queryText, queryValues);
 
                     const queryText2 = "UPDATE license_status SET tot_demerit_points = tot_demerit_points + $1 WHERE user_id = $2";
