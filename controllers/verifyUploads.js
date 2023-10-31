@@ -41,7 +41,7 @@ const viewUploadedViolations = async (req, res) => {
 
         // const violationData = violationMessage.map(string => JSON.parse(string));
         // console.log(violationData); 
-        console.log(violationMessage);
+        // console.log(violationMessage);
 
         for (const video of violationMessage) {
             // Query the DB to get details about the uploads based on the violationData
@@ -204,7 +204,7 @@ const verifyUploads = async (req,res) => {
         }
         else{
             //sending acknowledgement to the queue
-            queueHandler.sendAck(deliveryTag);
+            // queueHandler.sendAck(deliveryTag);
         
             return res.json({
                 message: "Video Verified Sucessfully"
