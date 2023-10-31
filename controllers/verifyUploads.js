@@ -197,16 +197,13 @@ const verifyUploads = async (req,res) => {
             return res.status(500).json({ message: 'Error updating the table' });
         }
         else{
+            //sending acknowledgement to the queue
+            queueHandler.sendAck(deliveryTag);
+        
             return res.json({
                 message: "Video Verified Sucessfully"
             });
         }
-
-        //sending acknowledgement to the queue
-        // queueHandler.sendAck(deliveryTag);
-        console.log(req.body);
-        console.log(req.files);
-
 
     }
     catch (error) {
