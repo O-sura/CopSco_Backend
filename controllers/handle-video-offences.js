@@ -100,7 +100,7 @@ const video_issueFine = async (req, res) => {
         caseID,
         // date,
         // time,
-        // vehicleNumber,
+        vehicleNumber,
         // vehicleProvince,
         // policeDivisionID,
         // description,
@@ -109,6 +109,7 @@ const video_issueFine = async (req, res) => {
         demeritPoints,
         // licenseNumber
     } = req.body;
+
 
     try {
         const vehicleUser = await pool.query("SELECT * FROM dmv WHERE plate_no = $1", [vehicleNumber]);
@@ -125,7 +126,7 @@ const video_issueFine = async (req, res) => {
             const reporterID = videoDetails.rows[0].reporterid;
             const date = videoDetails.rows[0].violation_date;
             const time = videoDetails.rows[0].violation_time;
-            const vehicleNumber = videoDetails.rows[0].vehicleno;
+            // const vehicleNumber = videoDetails.rows[0].vehicleno;
             const policeDivisionID = videoDetails.rows[0].division_id;
             const description = videoDetails.rows[0].description;
 
@@ -154,38 +155,51 @@ const video_issueFine = async (req, res) => {
                     break;
             }
 
- 
-
             //calculate reward for each violation based on fineAmount
             let reward = 0; // Initialize reward as a numeric variable
             for (const violation of fineAmount) {
                 reward += (violation * reward_percentage); // Accumulate rewards
             }
 
+            const fine = await pool.connect();
 
-            //insert in to the fine table each violation
-            await pool.query('BEGIN');
+            try{
+                //insert in to the fine table each violation
+                await fine.query('BEGIN');
 
-            for (let i = 0; i < typeOfOffence.length; i++) {
-                await pool.query("INSERT INTO fine (date, time, vehicle_number, police_divisionid, description, type_of_offence, amount, demerit_points,nic) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9,$10)", 
-                [date, time, vehicleNumber, policeDivisionID, description, typeOfOffence[i], fineAmount[i], demeritPoints[i]],nic);
+                for (let i = 0; i < typeOfOffence.length; i++) {
+                    await pool.query("INSERT INTO fine (date, time, vehicle_number, police_divisionid, description, type_of_offence, amount, demerit_points,nic) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9,$10)", 
+                    [date, time, vehicleNumber, policeDivisionID, description, typeOfOffence[i], fineAmount[i], demeritPoints[i]],nic);
+                }
+
+                //update the reward table or add new row
+                await pool.query("INSERT INTO reward (userid, amount) VALUES ($1, $2) ON CONFLICT (userid) DO UPDATE SET amount = amount + $2", [reporterID, reward]);
+
+                //update the reported_violations table
+                await pool.query("UPDATE reported_violations SET division_status = 'fined', reward = $1 WHERE caseid = $2", [reward, caseID]);
+
+
+                // Commit the transaction
+                await fine.query('COMMIT');
+
+                return res.status(200).json({message: "Fine issued successfully"});
+
             }
-
-            //update the reward table or add new row
-            await pool.query("INSERT INTO reward (userid, amount) VALUES ($1, $2) ON CONFLICT (userid) DO UPDATE SET amount = amount + $2", [reporterID, reward]);
-
-            //update the reported_violations table
-            await pool.query("UPDATE reported_violations SET division_status = 'fined', reward = $1 WHERE caseid = $2", [reward, caseID]);
-
-
-             // Commit the transaction
-            await pool.query('COMMIT');
+            catch(err)
+            {
+                await fine.query('ROLLBACK');
+                console.error(err.message);
+                return res.status(401).json({error: "Error issuing fine, please try again"});
+            }
+            finally
+            {
+                fine.release();
+            }
 
         }
     }
     catch(err)
     {
-        await fine.query('ROLLBACK');
         console.error(err.message);
         return res.status(401).json({error: "Error issuing fine, please try again"});
     }
