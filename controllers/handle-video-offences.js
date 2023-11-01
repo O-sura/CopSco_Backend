@@ -25,7 +25,7 @@ const viewVerifiedVideos = async (req, res) => {
             
             const videos = [];
     
-            const query = "SELECT * FROM reported_violations INNER JOIN police_divisions ON reported_violations.division_id = police_divisions.division_id WHERE status = \'accepted\' AND police_divisions.police_username = $1";
+            const query = "SELECT * FROM reported_violations INNER JOIN police_divisions ON reported_violations.division_id = police_divisions.division_id WHERE status = \'accepted\' AND division_status= \'pending\' AND police_divisions.police_username = $1";
             const result = await pool.query(query, [police_username]);
             // console.log(query);
     
@@ -182,7 +182,12 @@ const video_issueFine = async (req, res) => {
                 tot_demeritPoints += demeritPoints[i];
             }
         
-
+            //calculate total reward points
+            let tot_rewardPoints = 0;
+            for(i = 0; i < fineAmount.length; i++)
+            {
+                tot_rewardPoints += tot_rewardPoints+1;
+            }
 
             const fine = await pool.connect();
 
@@ -204,9 +209,9 @@ const video_issueFine = async (req, res) => {
                 //update the license_status table or add new row
                 await fine.query("INSERT INTO license_status (user_id,tot_demerit_points) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET tot_demerit_points = EXCLUDED.tot_demerit_points + $2", [current_owner_id, tot_demeritPoints]);
 
-                //get current demerit points of cuurent owner
-                const points = await fine.query("SELECT tot_demerit_points FROM license_status WHERE user_id = $1", [current_owner_id]);
-                const current_points = points.rows[0].tot_demerit_points;
+                //update user_tier table or add new row
+                await fine.query("INSERT INTO user_tier (userid,current_points) VALUES ($1, $2) ON CONFLICT (userid) DO UPDATE SET current_points = EXCLUDED.current_points + $2", [reporterID, tot_rewardPoints]);
+
 
                 // Commit the transaction
                 await fine.query('COMMIT');
