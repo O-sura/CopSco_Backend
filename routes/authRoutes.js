@@ -21,7 +21,8 @@ router.post('/register', async (req,res) => {
         lname,
         contact,
         email,
-        verifyMode
+        verifyMode,
+        divisionCode
       } = req.body;
 
 
@@ -50,8 +51,8 @@ router.post('/register', async (req,res) => {
         
             // Insert user data into the database
             const newUser = await pool.query(
-              'INSERT INTO users (username, password, nic, fname, lname, secret, email, contactno, verification_mode, otp, otp_expiration) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *',
-              [username, hashedPassword, nic, fname, lname, secret, email, contact, verifyMode, otp, otpExpiration]
+              'INSERT INTO users (username, password, nic, fname, lname, secret, email, contactno, verification_mode, otp, otp_expiration,division_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *',
+              [username, hashedPassword, nic, fname, lname, secret, email, contact, verifyMode, otp, otpExpiration, divisionCode]
             );
 
             // Return the newly created user
