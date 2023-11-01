@@ -56,6 +56,8 @@ app.use('/violations', require('./routes/handleVideosRoutes'));
 
 app.use('/police-division', require('./routes/verify-document-route'));
 
+app.use('/profile-info', require('./routes/profileRoutes'));
+
 app.get('/protected', verifyJWT, (req,res) =>{
     res.send("This is a protected route")
 })
