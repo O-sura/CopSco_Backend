@@ -25,7 +25,7 @@ const viewVerifiedVideos = async (req, res) => {
             
             const videos = [];
     
-            const query = "SELECT * FROM reported_violations INNER JOIN police_divisions ON reported_violations.division_id = police_divisions.division_id WHERE status = \'accepted\' AND police_divisions.police_username = $1";
+            const query = "SELECT * FROM reported_violations INNER JOIN police_divisions ON reported_violations.division_id = police_divisions.division_id WHERE status = \'accepted\' AND division_status=\'pending\' AND police_divisions.police_username = $1";
             const result = await pool.query(query, [police_username]);
             // console.log(query);
     
@@ -204,7 +204,7 @@ const video_issueFine = async (req, res) => {
                 await fine.query("INSERT INTO reward (userid,amount) VALUES ($1, $2) ON CONFLICT (userid) DO UPDATE SET amount = EXCLUDED.amount + $2", [reporterID, rewardInt]);
 
                 //update the reported_violations table
-                await fine.query("UPDATE reported_violations SET division_status = 'fined', reward = $1 WHERE caseid = $2", [rewardInt, caseID]);
+                await fine.query("UPDATE reported_violations SET division_status = 'accpeted', reward = $1 WHERE caseid = $2", [rewardInt, caseID]);
 
                 //update the license_status table or add new row
                 await fine.query("INSERT INTO license_status (user_id,tot_demerit_points) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET tot_demerit_points = EXCLUDED.tot_demerit_points + $2", [current_owner_id, tot_demeritPoints]);
