@@ -25,7 +25,7 @@ const viewVerifiedVideos = async (req, res) => {
             
             const videos = [];
     
-            const query = "SELECT * FROM reported_violations INNER JOIN police_divisions ON reported_violations.division_id = police_divisions.division_id WHERE status = \'accepted\' AND division_status= \'pending\' AND police_divisions.police_username = $1";
+            const query = "SELECT * FROM reported_violations INNER JOIN police_divisions ON reported_violations.division_id = police_divisions.division_id WHERE status = \'accepted\' AND police_divisions.police_username = $1";
             const result = await pool.query(query, [police_username]);
             // console.log(query);
     
