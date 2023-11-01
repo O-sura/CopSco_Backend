@@ -40,6 +40,8 @@ app.get('/', async (req,res) => {
 
 app.use('/auth', require('./routes/authRoutes'));
 
+app.use('/images', express.static(path.join(__dirname, 'uploads')));
+
 app.use('/upload', require('./routes/uploadRoutes'));
 
 app.use('/copsco', require('./routes/policeAuthRoute'));
@@ -49,6 +51,10 @@ app.use('/fines', require('./routes/fineManagement.js'));
 app.use('/driver', require('./routes/getDriver.js'));
 
 app.use('/admin', require('./routes/adminRoute.js'));
+
+app.use('/violations', require('./routes/handleVideosRoutes'));
+
+app.use('/police-division', require('./routes/police-division-routes'));
 
 
 app.get('/protected', verifyJWT, (req,res) =>{
