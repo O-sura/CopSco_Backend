@@ -97,16 +97,17 @@ const viewVerifiedVideoDetails = async (req, res) => {
 
 const video_issueFine = async (req, res) => {
     const { 
-        date,
-        time,
-        vehicleNumber,
+        caseID,
+        // date,
+        // time,
+        // vehicleNumber,
         // vehicleProvince,
-        policeDivisionID,
-        description,
+        // policeDivisionID,
+        // description,
         typeOfOffence,
         fineAmount,
         demeritPoints,
-        licenseNumber
+        // licenseNumber
     } = req.body;
 
     try {
@@ -118,6 +119,15 @@ const video_issueFine = async (req, res) => {
         else
         {
             const nic = vehicleUser.rows[0].current_owner_nic;
+
+            //get reporterid to give the reward
+            const videoDetails = await pool.query("SELECT * FROM reported_violations WHERE caseid = $1", [caseID]);
+            const reporterID = videoDetails.rows[0].reporterid;
+            const date = videoDetails.rows[0].violation_date;
+            const time = videoDetails.rows[0].violation_time;
+            const vehicleNumber = videoDetails.rows[0].vehicleno;
+            const policeDivisionID = videoDetails.rows[0].division_id;
+            const description = videoDetails.rows[0].description;
 
             //get user tier to calculate reward
             const tier = await pool.query("SELECT tier FROM users WHERE nic = $1", [nic]);
@@ -144,25 +154,38 @@ const video_issueFine = async (req, res) => {
                     break;
             }
 
-
-            const reward = [];
+ 
 
             //calculate reward for each violation based on fineAmount
+            let reward = 0; // Initialize reward as a numeric variable
             for (const violation of fineAmount) {
-                reward.push(violation * reward_percentage);
+                reward += (violation * reward_percentage); // Accumulate rewards
             }
 
+
             //insert in to the fine table each violation
+            await pool.query('BEGIN');
+
             for (let i = 0; i < typeOfOffence.length; i++) {
-                const fine = await pool.query("INSERT INTO fine (date, time, vehicle_no, division_id, description, type_of_offence, fine_amount, demerit_points, license_no, reward) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)", 
-                [date, time, vehicleNumber, policeDivisionID, description, typeOfOffence[i], fineAmount[i], demeritPoints[i], licenseNumber, reward[i]]);
+                await pool.query("INSERT INTO fine (date, time, vehicle_number, police_divisionid, description, type_of_offence, amount, demerit_points,nic) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9,$10)", 
+                [date, time, vehicleNumber, policeDivisionID, description, typeOfOffence[i], fineAmount[i], demeritPoints[i]],nic);
             }
+
+            //update the reward table or add new row
+            await pool.query("INSERT INTO reward (userid, amount) VALUES ($1, $2) ON CONFLICT (userid) DO UPDATE SET amount = amount + $2", [reporterID, reward]);
+
+            //update the reported_violations table
+            await pool.query("UPDATE reported_violations SET division_status = 'fined', reward = $1 WHERE caseid = $2", [reward, caseID]);
+
+
+             // Commit the transaction
+            await pool.query('COMMIT');
 
         }
     }
     catch(err)
     {
-        // await fine.query('ROLLBACK');
+        await fine.query('ROLLBACK');
         console.error(err.message);
         return res.status(401).json({error: "Error issuing fine, please try again"});
     }

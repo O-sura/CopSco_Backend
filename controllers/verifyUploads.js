@@ -26,12 +26,13 @@ const s3Client = new S3Client({
 // Function to handle viewing uploaded violations
 const viewUploadedViolations = async (req, res) => {
     try {
-
         queueHandler.createConnectionAndChannel();
 
         const videoUrls = [];
         // Assuming queueHandler receives messages with violation details
         const violationMessage = await queueHandler.getFromQueue('evidence-uploaded'); 
+        console.log(violationMessage);
+
 
         if (!violationMessage) {
             return res.json({
@@ -62,6 +63,9 @@ const viewUploadedViolations = async (req, res) => {
 
                 videoUrls.push({ url ,deleveryTag: video.deliveryTag, videokey: video.videokey,violationtype: video.violationtype,city:video.city,date:video.reportdate,description:video.description,thumbnail:video.thumbnail,caseID : video.caseid,
                 vehicleno:video.vehicleno,district:video.district,city:video.city,vehicleType:video.vehicletype,violationDate:video.violation_date,violationTime:video.violation_time});
+
+                //close the channel
+                // queueHandler.closeChaannel();
             }
             else
             {
