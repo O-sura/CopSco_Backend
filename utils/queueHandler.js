@@ -75,7 +75,7 @@ const getFromQueue = (queueName) => {
 
                 console.log(" [x] Received %s", JSON.stringify(msgContent));
                 resolve(messages); // Resolve the Promise with msgContent
-                // channel.close(); // Close the channel
+                channel.close(); // Close the channel
             }
         }, {
             noAck: false
