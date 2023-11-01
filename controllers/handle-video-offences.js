@@ -196,8 +196,8 @@ const video_issueFine = async (req, res) => {
                 await fine.query('BEGIN');
 
                 for (let i = 0; i < typeOfOffence.length; i++) {
-                    await fine.query("INSERT INTO fine (date, time, vehicle_number, police_divisionid,type_of_offence,description ,amount, demerit_points,nic,due_date) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9,$10)", 
-                    [date, time, vehicleNumber, policeDivisionID,1, typeOfOffence[i], fineAmount[i], demeritPoints[i],nic,dueDate]);
+                    await fine.query("INSERT INTO fine (date, time, vehicle_number, police_divisionid,type_of_offence,description ,amount, demerit_points,nic,due_date,caseid) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9,$10,$11)", 
+                    [date, time, vehicleNumber, policeDivisionID,1, typeOfOffence[i], fineAmount[i], demeritPoints[i],nic,dueDate,caseID]);
                 }
 
                 //update the reward table or add new row
