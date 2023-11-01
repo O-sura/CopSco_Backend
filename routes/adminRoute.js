@@ -1,13 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const getPoliceUsersController = require('../controllers/getPoliceUsersController'); 
+const getPoliceUsersController = require('../controllers/adminController'); 
 const dashboardController = require('../controllers/dashboardController');
-const getUsersController = require('../controllers/getUsersController');
-const createUsersController = require('../controllers/createUsersController');
-const updateUserRole = require('../controllers/createUsersController');
+const getUsersController = require('../controllers/adminController');
+const createUsersController = require('../controllers/adminController');
+const updateUserRole = require('../controllers/adminController');
+const updateUserStatus = require('../controllers/adminController')
 
 
-router.get('/getUsers', getPoliceUsersController.getAllUsers);
+router.get('/getPoliceUsers', getPoliceUsersController.getPoliceUsers);
 
 router.post('/createUsers', createUsersController.createUsers);
 
@@ -16,5 +17,7 @@ router.get('/',dashboardController.viewDashboard);
 router.get('/getAllUsers', getUsersController.getAllUsers);
 
 router.post('/updateUserRole', updateUserRole.updateUserRole);
+
+router.post('/updateUserStatus', updateUserStatus.updateUserStatus);
 
 module.exports = router; 
