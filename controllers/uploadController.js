@@ -85,7 +85,7 @@ const videoUploadController = async (req, res) => {
   const videoName = rawBytes.toString("hex");
   const previewImageName = videoName;
 
-  const { vehicleNum, type, violaton, district, city, description } = req.body;
+  const { vehicleNum, type, violaton, district, city, description,date,time } = req.body;
 
   //  const vehicleNum = "TestData"
   //  const type = "TestData"
@@ -144,7 +144,7 @@ const videoUploadController = async (req, res) => {
       try {
         //  //Update the users table with the uploaded filenames
         const violation = await pool.query(
-          "INSERT INTO reported_violations(videokey,vehicleno, vehicletype, violationtype,district,city,description, reporterid,videohash,metadata,thumbnail) VALUES($1,$2, $3, $4, $5, $6, $7, $8,$9, $10, $11) RETURNING *",
+          "INSERT INTO reported_violations(videokey,vehicleno, vehicletype, violationtype,district,city,description, reporterid,videohash,metadata,thumbnail,violation_date,violation_time) VALUES($1,$2, $3, $4, $5, $6, $7, $8,$9, $10, $11,$12,$13) RETURNING *",
           [
             videoName,
             vehicleNum,
@@ -157,6 +157,8 @@ const videoUploadController = async (req, res) => {
             videohash,
             metadata,
             previewImageName,
+            date,
+            time
           ]
         );
         if (violation) {

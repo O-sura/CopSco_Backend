@@ -56,4 +56,25 @@ let sendMail = async (email, resetToken, userId) => {
       }
 }
 
-module.exports =  {sendOTP, sendMail}
+let sendMsgVerification = async(contact,message) =>{
+
+  let url =  `https://www.textit.biz/sendmsg?id=94710944927&pw=1514&to=${contact}&text=${message}`
+  
+  try {
+    // Make an HTTP POST request using axios
+    const response = await axios.post(url)
+    // Handle the response from the API
+    const responseData = response.data;
+    if (response.status === 200) {
+     return true; // Return true to indicate success
+   } else {
+     return false; // Return false to indicate failure
+   }
+  } catch (error) {
+    console.error('Error during API call:', error);
+   //res.status(500).json({ error: 'Internal Server Error' });
+     return false;
+  }
+}
+
+module.exports =  {sendOTP, sendMail, sendMsgVerification}

@@ -52,15 +52,22 @@ app.use('/payfine', require('./routes/finePaymentRoute.js'));
 
 app.use('/driver', require('./routes/getDriver.js'));
 
+app.use('/admin', require('./routes/adminRoute.js'));
+
 app.use('/violations', require('./routes/handleVideosRoutes'));
 
-app.use('/police-division', require('./routes/verify-document-route'));
+app.use('/police-division', require('./routes/police-division-routes'));
+
+
+app.use('/profile-info', require('./routes/profileRoutes'));
 
 app.get('/protected', verifyJWT, (req,res) =>{
     res.send("This is a protected route")
 })
 
+
 //Server configs
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`)
 })
+
