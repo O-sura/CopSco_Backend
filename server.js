@@ -50,15 +50,20 @@ app.use('/fines', require('./routes/fineManagement.js'));
 
 app.use('/driver', require('./routes/getDriver.js'));
 
+app.use('/admin', require('./routes/adminRoute.js'));
+
 app.use('/violations', require('./routes/handleVideosRoutes'));
 
 app.use('/police-division', require('./routes/police-division-routes'));
+
 
 app.get('/protected', verifyJWT, (req,res) =>{
     res.send("This is a protected route")
 })
 
+
 //Server configs
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`)
 })
+
