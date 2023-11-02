@@ -58,4 +58,6 @@ router.delete('/delete-video/:id', roleChecker('general-user'), uploadController
 //get video fine details
 router.get('/video-fines', roleChecker('general-user'), uploadController.getUserVideoFines)
 
+router.get('/getAppealedFines', roleChecker('general-user'), uploadController.getAppealedFines)
+
 module.exports = router;

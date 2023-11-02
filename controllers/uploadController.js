@@ -311,7 +311,7 @@ const getUserVideoFines = async (req, res) => {
 
   try {
     const query =
-      "SELECT fine.reference_id, reported_violations.thumbnail,reported_violations.videokey, fine.vehicle_number, fine.description, fine.status, reported_violations.city, reported_violations.district, fine.due_date, fine.time, fine.amount, fine.demerit_points , police_divisions.location FROM reported_violations INNER JOIN fine ON reported_violations.referenceid = fine.reference_id INNER JOIN police_divisions ON fine.police_divisionid = police_divisions.division_id WHERE fine.nic = $1 AND fine.status <> 2";
+      "SELECT fine.reference_id, reported_violations.thumbnail,reported_violations.videokey, fine.vehicle_number, fine.description, fine.status, reported_violations.city, reported_violations.district,fine.date, fine.due_date, fine.time, fine.amount, fine.demerit_points , police_divisions.location FROM reported_violations INNER JOIN fine ON reported_violations.caseid = fine.caseid INNER JOIN police_divisions ON fine.police_divisionid = police_divisions.division_id WHERE fine.nic = $1 AND fine.status <> 2";
     const result = await pool.query(query, [nic]);
 
     // Extract video data and thumbnails from the result
@@ -324,6 +324,25 @@ const getUserVideoFines = async (req, res) => {
   }
 };
 
+const getAppealedFines = async(req,res) =>{
+  const nic = req.username;
+  //const userID = "2a114d7a-7046-481c-bcf3-5dd8aadeb0a0";
+
+  try {
+    const query =
+      "SELECT fine.reference_id, reported_violations.thumbnail,reported_violations.videokey, fine.vehicle_number, fine.description, fine.status, reported_violations.city, reported_violations.district, fine.due_date, fine.date, fine.time, fine.amount, fine.demerit_points , police_divisions.location FROM reported_violations INNER JOIN fine ON reported_violations.caseid = fine.caseid INNER JOIN police_divisions ON fine.police_divisionid = police_divisions.division_id WHERE fine.nic = $1 AND fine.status = 2";
+    const result = await pool.query(query, [nic]);
+
+    // Extract video data and thumbnails from the result
+    const videoData = result.rows;
+    // Send the video data to the frontend
+    res.status(200).json(videoData);
+  } catch (error) {
+    console.error("Error fetching video data:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+ }
+
  
 module.exports = {
   imageUploader,
@@ -333,5 +352,6 @@ module.exports = {
   getHiddenVideos,
   toggleHideVideo,
   deleteVideo,
-  getUserVideoFines
+  getUserVideoFines,
+  getAppealedFines
 };
