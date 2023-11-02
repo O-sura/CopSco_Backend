@@ -2,15 +2,9 @@ const { pool } = require("../db.config");
 
 const makeAppeal = async (request, response) => {
     try {
-        const { userId, caseId, reason, description } = request.body;
+        const { caseId, reason, description } = request.body;
 
-        const userExists = await pool.query("SELECT * FROM users WHERE userid = $1", [userId]);
-
-        if (userExists.rows.length === 0) {
-            return response.status(404).json({
-                message: "User not found"
-            });
-        }
+      
 
         const caseExists = await pool.query("SELECT * FROM fine WHERE reference_id = $1", [caseId]);
 
