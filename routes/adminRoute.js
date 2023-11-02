@@ -6,7 +6,7 @@ const getUsersController = require('../controllers/adminController');
 const createUsersController = require('../controllers/adminController');
 const updateUserRole = require('../controllers/adminController');
 const updateUserStatus = require('../controllers/adminController')
-
+const makeAppeal = require('../controllers/appealController')
 
 router.get('/getPoliceUsers', getPoliceUsersController.getPoliceUsers);
 
@@ -19,5 +19,7 @@ router.get('/getAllUsers', getUsersController.getAllUsers);
 router.post('/updateUserRole', updateUserRole.updateUserRole);
 
 router.post('/updateUserStatus', updateUserStatus.updateUserStatus);
+
+router.post('/makeAppeal', makeAppeal.makeAppeal)
 
 module.exports = router; 

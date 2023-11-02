@@ -25,7 +25,7 @@ const viewVerifiedVideos = async (req, res) => {
             
             const videos = [];
     
-            const query = "SELECT * FROM reported_violations INNER JOIN police_divisions ON reported_violations.division_id = police_divisions.division_id WHERE status = \'accepted\' AND police_divisions.police_username = $1";
+            const query = "SELECT * FROM reported_violations INNER JOIN police_divisions ON reported_violations.division_id = police_divisions.division_id WHERE status = \'accepted\' AND division_status=\'pending\' AND police_divisions.police_username = $1";
             const result = await pool.query(query, [police_username]);
             // console.log(query);
     
@@ -112,6 +112,7 @@ const video_issueFine = async (req, res) => {
 
 
     try {
+
         const vehicleUser = await pool.query("SELECT * FROM dmv WHERE plate_no = $1", [vehicleNumber]);
         if(vehicleUser.rows.length === 0)
         {
@@ -120,11 +121,14 @@ const video_issueFine = async (req, res) => {
         else
         {
             const nic = vehicleUser.rows[0].current_owner_nic;
+            //get vehicle owner userid to give fine
+            const current_owner = await pool.query("SELECT userid FROM users WHERE nic = $1", [nic]);
+            const current_owner_id = current_owner.rows[0].userid;
 
             //get reporterid to give the reward
             const videoDetails = await pool.query("SELECT * FROM reported_violations WHERE caseid = $1", [caseID]);
             const reporterID = videoDetails.rows[0].reporterid;
-            const date = videoDetails.rows[0].violation_date;
+            // const date = videoDetails.rows[0].violation_date;
             const time = videoDetails.rows[0].violation_time;
             // const vehicleNumber = videoDetails.rows[0].vehicleno;
             const policeDivisionID = videoDetails.rows[0].division_id;
@@ -137,19 +141,19 @@ const video_issueFine = async (req, res) => {
             switch(tier.rows[0].tier)
             {
                 case 'bronze':
-                    reward_percentage = 0.05;
-                    break;
-                case 'silver':
-                    reward_percentage = 0.07;
-                    break;
-                case 'gold':
                     reward_percentage = 0.1;
                     break;
+                case 'silver':
+                    reward_percentage = 0.15;
+                    break;
+                case 'gold':
+                    reward_percentage = 0.18;
+                    break;
                 case 'platinum':
-                    reward_percentage = 0.12;
+                    reward_percentage = 0.2;
                     break;
                 case 'diamond':
-                    reward_percentage = 0.15;
+                    reward_percentage = 0.25;
                     break;
                 default:
                     break;
@@ -157,8 +161,32 @@ const video_issueFine = async (req, res) => {
 
             //calculate reward for each violation based on fineAmount
             let reward = 0; // Initialize reward as a numeric variable
+            let rewardInt = 0;
             for (const violation of fineAmount) {
                 reward += (violation * reward_percentage); // Accumulate rewards
+                //convert to int
+                 rewardInt = parseInt(reward);
+            }
+
+            //set due date two weeks after the current date
+            const currentDate = new Date();
+            const date = currentDate.toISOString().slice(0,10);
+            currentDate.setDate(currentDate.getDate() + 14);
+            const dueDate = currentDate.toISOString().slice(0,10);
+
+            //calculate total demerit points
+            let tot_demeritPoints = 0;
+            let demeritPointsInt = 0;
+            for(i = 0; i < demeritPoints.length; i++)
+            {
+                tot_demeritPoints += demeritPoints[i];
+            }
+        
+            //calculate total reward points
+            let tot_rewardPoints = 0;
+            for(i = 0; i < fineAmount.length; i++)
+            {
+                tot_rewardPoints += tot_rewardPoints+1;
             }
 
             const fine = await pool.connect();
@@ -168,15 +196,21 @@ const video_issueFine = async (req, res) => {
                 await fine.query('BEGIN');
 
                 for (let i = 0; i < typeOfOffence.length; i++) {
-                    await pool.query("INSERT INTO fine (date, time, vehicle_number, police_divisionid, description, type_of_offence, amount, demerit_points,nic) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9,$10)", 
-                    [date, time, vehicleNumber, policeDivisionID, description, typeOfOffence[i], fineAmount[i], demeritPoints[i]],nic);
+                    await fine.query("INSERT INTO fine (date, time, vehicle_number, police_divisionid,type_of_offence,description ,amount, demerit_points,nic,due_date,caseid) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9,$10,$11)", 
+                    [date, time, vehicleNumber, policeDivisionID,1, typeOfOffence[i], fineAmount[i], demeritPoints[i],nic,dueDate,caseID]);
                 }
 
                 //update the reward table or add new row
-                await pool.query("INSERT INTO reward (userid, amount) VALUES ($1, $2) ON CONFLICT (userid) DO UPDATE SET amount = amount + $2", [reporterID, reward]);
+                await fine.query("INSERT INTO reward (userid,amount) VALUES ($1, $2) ON CONFLICT (userid) DO UPDATE SET amount = EXCLUDED.amount + $2", [reporterID, rewardInt]);
 
                 //update the reported_violations table
-                await pool.query("UPDATE reported_violations SET division_status = 'fined', reward = $1 WHERE caseid = $2", [reward, caseID]);
+                await fine.query("UPDATE reported_violations SET division_status = 'accpeted', reward = $1 WHERE caseid = $2", [rewardInt, caseID]);
+
+                //update the license_status table or add new row
+                await fine.query("INSERT INTO license_status (user_id,tot_demerit_points) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET tot_demerit_points = EXCLUDED.tot_demerit_points + $2", [current_owner_id, tot_demeritPoints]);
+
+                //update user_tier table or add new row
+                await fine.query("INSERT INTO user_tier (userid,current_points) VALUES ($1, $2) ON CONFLICT (userid) DO UPDATE SET current_points = EXCLUDED.current_points + $2", [reporterID, tot_rewardPoints]);
 
 
                 // Commit the transaction
@@ -201,7 +235,6 @@ const video_issueFine = async (req, res) => {
     catch(err)
     {
         console.error(err.message);
-        return res.status(401).json({error: "Error issuing fine, please try again"});
     }
 }
 

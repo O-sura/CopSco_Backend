@@ -136,7 +136,7 @@ const getPastViolations = async (req,res) => {
                 const result = await pool.query(query, [vehicle_no, listViolations]);
                 console.log(result.rows);
                 for (const row of result.rows) {
-                  pastViolations.push({ image: row.thumbnail, description: row.description, location: row.location, date: row.reportdate});
+                  pastViolations.push({ image: row.thumbnail, description: row.description, district: row.district,city: row.city, date: row.reportdate});
                 }
               }
              
