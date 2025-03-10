@@ -152,7 +152,7 @@ const getPoliceUsers = async (request, response) => {
 
 const getAllUsers = async (request, response) => {
   try {
-      const users = await pool.query("SELECT userid, CONCAT(fname,' ',lname) AS name, contactno, email, nic, datejoined, status, user_activity From users");
+      const users = await pool.query("SELECT userid, CONCAT(fname,' ',lname) AS name, contactno, email, nic, datejoined, status, user_activity, last_login From users");
 
       if (users.rows.length === 0) {
           return response.status(400).json({

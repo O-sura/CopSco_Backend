@@ -74,7 +74,7 @@ const issueFines = async(req, res) => {
                     await fine.query(queryText, queryValues);
 
                     // const queryText2 = "UPDATE license_status SET tot_demerit_points = tot_demerit_points + $1 WHERE user_id = $2";
-                    const queryText2 = "INSERT INTO license_status (user_id,tot_demerit_points) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET tot_demerit_points = EXCLUDED.tot_demerit_points + $2"
+                    const queryText2 = "INSERT INTO license_status (user_id,tot_demerit_points) VALUES ($2, $1) ON CONFLICT (user_id) DO UPDATE SET tot_demerit_points = EXCLUDED.tot_demerit_points + $1"
                     const queryValues2 = [demeritPoints, userID.rows[0].userid];
                     await fine.query(queryText2, queryValues2);
 

@@ -4,7 +4,7 @@ const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const { S3Client, PutObjectCommand, GetObjectCommand } = require("@aws-sdk/client-s3");
 
 const region = "ap-south-1"
-const bucketName = "copsco-video-bucket"
+const bucketName = "oshada-copsco-video-bucket"
 const accessKeyID = process.env.ACCESS_KEY
 const secretKeyID = process.env.SECRET_ACCESS_KEY
 

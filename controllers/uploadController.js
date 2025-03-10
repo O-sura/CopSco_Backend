@@ -16,7 +16,7 @@ const randomBytes = util.promisify(crypto.randomBytes);
 
 //upload video to the s3
 const region = "ap-south-1";
-const bucketName = "copsco-video-bucket";
+const bucketName = "oshada-copsco-video-bucket";
 const accessKeyID = process.env.ACCESS_KEY;
 const secretKeyID = process.env.SECRET_ACCESS_KEY;
 
