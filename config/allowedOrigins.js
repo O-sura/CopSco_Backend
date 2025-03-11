@@ -3,7 +3,7 @@ const allowedOrigins = [
     'http://127.0.0.1:8000',
     'http://localhost:8000',
     'http://localhost:3000',
-    'http://13.127.27.87:3000'
+    'http://13.127.27.87'
 ] 
 
 module.exports = allowedOrigins;
