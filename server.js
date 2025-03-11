@@ -38,30 +38,30 @@ app.get('/', async (req,res) => {
     //console.log(response)
 })
 
-app.use('/auth', require('./routes/authRoutes'));
+app.use('/api/auth', require('./routes/authRoutes'));
 
-app.use('/images', express.static(path.join(__dirname, 'uploads')));
+app.use('/api/images', express.static(path.join(__dirname, 'uploads')));
 
-app.use('/upload', require('./routes/uploadRoutes'));
+app.use('/api/upload', require('./routes/uploadRoutes'));
 
-app.use('/copsco', require('./routes/policeAuthRoute'));
+app.use('/api/copsco', require('./routes/policeAuthRoute'));
 
-app.use('/fines', require('./routes/fineManagement.js'));
+app.use('/api/fines', require('./routes/fineManagement.js'));
 
-app.use('/payfine', require('./routes/finePaymentRoute.js'));
+app.use('/api/payfine', require('./routes/finePaymentRoute.js'));
 
-app.use('/driver', require('./routes/getDriver.js'));
+app.use('/api/driver', require('./routes/getDriver.js'));
 
-app.use('/admin', require('./routes/adminRoute.js'));
+app.use('/api/admin', require('./routes/adminRoute.js'));
 
-app.use('/violations', require('./routes/handleVideosRoutes'));
+app.use('/api/violations', require('./routes/handleVideosRoutes'));
 
-app.use('/police-division', require('./routes/police-division-routes'));
+app.use('/api/police-division', require('./routes/police-division-routes'));
 
 
-app.use('/profile-info', require('./routes/profileRoutes'));
+app.use('/api/profile-info', require('./routes/profileRoutes'));
 
-app.get('/protected', verifyJWT, (req,res) =>{
+app.get('/api/protected', verifyJWT, (req,res) =>{
     res.send("This is a protected route")
 })
 
