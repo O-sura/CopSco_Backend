@@ -13,7 +13,7 @@ const {generateQRCode} = require('./utils/authHelper')
 const axios = require('axios');
 
 let PORT = process.env.PORT | 8000
-console.log('All environment variables:', process.env);
+
 //Handling server side session
 app.use(sessionMiddleware);
 
